@@ -15,8 +15,8 @@ To deliberately apply editorial improvements to titles and options, run
 by the reserved library owner. Quiz IDs, join codes, player records, best scores,
 coins, and unlocked avatars stay intact. Existing attempts keep their original
 question/answer snapshots so a quiz already in progress cannot change mid-round.
-History lists current readable titles; old result screens can retain their original
-snapshot title. Correct-answer positions vary in the authored catalogue; runtime
+History and play screens display current readable catalogue titles while the original
+attempt snapshots remain unchanged. Correct-answer positions vary in the authored catalogue; runtime
 also shuffles options separately for each attempt.
 
 Math and code-expression questions use deterministic, precomputed answers. No code

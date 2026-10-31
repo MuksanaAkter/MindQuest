@@ -40,7 +40,7 @@ export async function JOIN(request: Request) { return guarded(async () => {
   const quiz = await getDb().quiz.findUnique({ where: { code: input.code } });
   if (!quiz || !quiz.published) throw new ArenaError(404, "This quiz is unavailable. Check the code with its creator.");
   const profile = await getPlayer(ownerKey);
-  if (!BASE_AVATARS.includes(input.avatar as typeof BASE_AVATARS[number]) && !profile.unlockedAvatars.includes(input.avatar)) throw new ArenaError(403, "Earn this avatar by scoring above 90% on a library quiz first.");
+  if (!BASE_AVATARS.includes(input.avatar as typeof BASE_AVATARS[number]) && !profile.unlockedAvatars.includes(input.avatar)) throw new ArenaError(403, "Level up to unlock this avatar first.");
   await getDb().playerProfile.update({ where: { ownerKey }, data: { name: input.name, avatar: input.avatar } });
   const authored = quiz.questions as unknown as QuizInput["questions"];
   const questions = authored.map((q) => {

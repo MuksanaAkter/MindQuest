@@ -1,5 +1,5 @@
 import catalogue from "../../apps/server/prisma/seeds/catalogue.json";
-import { isMastery, rewardTarget, playerLevel } from "@mindquest/server/quizzes/reward-rules";
+import { isMastery, rewardTarget, playerLevel, avatarsForLevel, availableAvatars, avatarUnlockLevel } from "@mindquest/server/quizzes/reward-rules";
 import { quizSchema } from "@mindquest/server/quizzes/validation";
 test("50 complete, unique ready quizzes cover ten topics and 750 distinct questions", () => {
   expect(catalogue).toHaveLength(50); expect(new Set(catalogue.map((q) => q.title)).size).toBe(50);
@@ -31,4 +31,17 @@ test("English distractors are topic-specific and authored correct positions vary
   for (const quiz of catalogue.filter((q) => q.topic === "English")) {
     for (const question of quiz.questions) expect(question.options.some((option) => repeatedFillers.includes(option))).toBe(false);
   }
+});
+
+test("five free avatars and ten level unlocks are independent of trophy scores", () => {
+  expect(availableAvatars(1)).toHaveLength(5);
+  expect(avatarsForLevel(1)).toEqual([]);
+  expect(avatarsForLevel(2)).toEqual(["phoenix"]);
+  expect(availableAvatars(3)).toHaveLength(7);
+  expect(availableAvatars(11)).toHaveLength(15);
+  expect(availableAvatars(90)).toHaveLength(15);
+  expect(avatarUnlockLevel("panda")).toBe(11);
+  expect(availableAvatars(1, ["rocket"])).toContain("rocket");
+  expect(isMastery(90, 100)).toBe(false);
+  expect(isMastery(91, 100)).toBe(true);
 });

@@ -3597,10 +3597,10 @@
       {
         "prompt": "What is RAM mainly used for?",
         "options": [
-          "Printing photos",
+          "Connecting computers to a network",
           "Temporary working memory",
-          "Permanent paper storage",
-          "Measuring screen size"
+          "Long-term file storage",
+          "Carrying out processor instructions"
         ],
         "correctIndex": 1,
         "explanation": "RAM holds data and programs currently in use."
@@ -3608,9 +3608,9 @@
       {
         "prompt": "Which program is used to visit websites?",
         "options": [
-          "Alarm clock",
-          "Calculator",
-          "File compressor only",
+          "Word processor",
+          "Spreadsheet program",
+          "File compression program",
           "Web browser"
         ],
         "correctIndex": 3,
@@ -3674,10 +3674,10 @@
       {
         "prompt": "What is a backup?",
         "options": [
-          "An empty folder only",
+          "An update to a program",
           "An extra copy of data",
-          "A password shown publicly",
-          "A broken screen"
+          "A way to encrypt a file",
+          "A way to shrink a file"
         ],
         "correctIndex": 1,
         "explanation": "A backup can help restore data if the original is lost."
@@ -3685,8 +3685,8 @@
       {
         "prompt": "Which number system uses only 0 and 1?",
         "options": [
-          "Hexadecimal only",
-          "Roman numerals",
+          "Hexadecimal",
+          "Octal",
           "Binary",
           "Decimal"
         ],
@@ -4620,9 +4620,9 @@
       {
         "prompt": "What does a search engine help you find?",
         "options": [
-          "Only hidden passwords",
-          "Electricity",
-          "Only offline files",
+          "Files stored only on your own computer",
+          "The strength of a Wi-Fi signal",
+          "Updates for installed apps only",
           "Information on the web"
         ],
         "correctIndex": 3,
@@ -4697,10 +4697,10 @@
       {
         "prompt": "What is a browser tab used for?",
         "options": [
-          "Measuring internet speed",
-          "Storing physical coins",
+          "Deleting browsing history",
+          "Changing the browser’s language",
           "Keeping a page open within the browser",
-          "Holding a paper notebook"
+          "Saving a page permanently offline"
         ],
         "correctIndex": 2,
         "explanation": "Tabs allow several pages in one browser window."
@@ -4708,9 +4708,9 @@
       {
         "prompt": "What is an online scam usually trying to do?",
         "options": [
-          "Repair a broken chair",
-          "Make every device faster",
-          "Teach an official school lesson",
+          "Automatically back up every file",
+          "Improve the speed of a connection",
+          "Check every message for spelling mistakes",
           "Trick people into giving money or information"
         ],
         "correctIndex": 3,
@@ -4731,9 +4731,9 @@
         "prompt": "What does accessibility aim to do in software?",
         "options": [
           "Make it usable by people with different abilities",
-          "Hide every button",
-          "Require the newest phone",
-          "Remove all text"
+          "Make software work only on the newest devices",
+          "Use the same small text size for everyone",
+          "Replace every menu with unlabelled icons"
         ],
         "correctIndex": 0,
         "explanation": "Accessible design helps more people use a product."
@@ -6006,10 +6006,10 @@
       {
         "prompt": "Which kind of energy does a moving bicycle have?",
         "options": [
-          "Only nuclear energy",
-          "Only chemical energy",
+          "Chemical energy in its frame",
+          "Elastic potential energy",
           "Kinetic energy",
-          "No energy"
+          "Gravitational potential energy"
         ],
         "correctIndex": 2,
         "explanation": "Moving objects have kinetic energy."
@@ -6017,10 +6017,10 @@
       {
         "prompt": "Which kind of energy is stored in a stretched rubber band?",
         "options": [
-          "Light energy only",
+          "Electrical energy",
           "Elastic potential energy",
-          "Sound energy only",
-          "Thermal energy only"
+          "Kinetic energy",
+          "Sound energy"
         ],
         "correctIndex": 1,
         "explanation": "Stretching an elastic object stores potential energy."
@@ -6040,22 +6040,22 @@
         "prompt": "What carries sound through air?",
         "options": [
           "Vibrations of air particles",
-          "Gravity waves",
-          "A stream of electrons only",
-          "Small light rays"
+          "Light waves",
+          "Electrical current",
+          "Magnetic field changes"
         ],
         "correctIndex": 0,
         "explanation": "Sound travels as pressure disturbances in air."
       },
       {
-        "prompt": "Can sound travel through a perfect vacuum?",
+        "prompt": "Why can sound not travel through a perfect vacuum?",
         "options": [
-          "Yes, faster than in air",
-          "Only at night",
-          "Only if it is loud",
-          "No"
+          "There are no particles to carry vibrations",
+          "There is no magnetic field",
+          "Light waves block all sound waves",
+          "The pressure is too high"
         ],
-        "correctIndex": 3,
+        "correctIndex": 0,
         "explanation": "Sound needs a material medium."
       },
       {
@@ -6106,8 +6106,8 @@
         "prompt": "Which force often slows sliding objects and produces heat?",
         "options": [
           "Buoyancy",
-          "Nuclear force",
-          "Gravity only",
+          "Magnetism",
+          "Gravity",
           "Friction"
         ],
         "correctIndex": 3,
@@ -6116,9 +6116,9 @@
       {
         "prompt": "Which simple machine is a ramp an example of?",
         "options": [
-          "Screw only",
           "Wheel and axle",
           "Pulley",
+          "Lever",
           "Inclined plane"
         ],
         "correctIndex": 3,
@@ -6171,10 +6171,10 @@
       {
         "prompt": "What process lets green plants make sugars using light?",
         "options": [
-          "Respiration only",
+          "Transpiration",
           "Photosynthesis",
-          "Evaporation only",
-          "Rusting"
+          "Respiration",
+          "Evaporation"
         ],
         "correctIndex": 1,
         "explanation": "Photosynthesis uses light energy to build sugars."
@@ -6215,10 +6215,10 @@
       {
         "prompt": "Which plant structures usually absorb water from soil?",
         "options": [
-          "Fruit",
-          "Seeds only",
+          "Stems above the soil",
+          "Petals",
           "Roots",
-          "Petals"
+          "Fruit"
         ],
         "correctIndex": 2,
         "explanation": "Roots take in water and dissolved minerals."
@@ -6238,9 +6238,9 @@
         "prompt": "What is pollination?",
         "options": [
           "Transfer of pollen to a flower’s receptive part",
-          "A leaf turning into soil instantly",
-          "A seed becoming a stone",
-          "A root absorbing water"
+          "A seed beginning to grow",
+          "Water moving from roots to leaves",
+          "A plant losing water through its leaves"
         ],
         "correctIndex": 0,
         "explanation": "Pollination enables reproduction in flowering plants."
@@ -6270,9 +6270,9 @@
       {
         "prompt": "Which tissue carries water upward in many plants?",
         "options": [
-          "Skin cells",
-          "Bone marrow",
-          "Phloem only",
+          "Phloem",
+          "Cambium",
+          "Epidermis",
           "Xylem"
         ],
         "correctIndex": 3,
@@ -6325,9 +6325,9 @@
       {
         "prompt": "Which condition is usually important for a seed to germinate?",
         "options": [
-          "Complete lack of water",
-          "Being coated in plastic forever",
-          "Being frozen solid always",
+          "Sunlight without any water",
+          "Dry soil and no moisture",
+          "Continuous freezing temperatures",
           "Suitable water and temperature"
         ],
         "correctIndex": 3,
@@ -6457,10 +6457,10 @@
       {
         "prompt": "What should you record in a results table?",
         "options": [
-          "Only the experiment’s title",
-          "Unrelated guesses",
+          "Only your prediction",
+          "Only the equipment list",
           "Observations or measurements",
-          "Only your favourite answer"
+          "Only the experiment’s instructions"
         ],
         "correctIndex": 2,
         "explanation": "A results table organises evidence from the investigation."
@@ -6941,10 +6941,10 @@
       {
         "prompt": "What makes most seawater taste salty?",
         "options": [
-          "Tiny plastic only",
+          "Oils released by sea plants",
           "Dissolved salts",
-          "Liquid sugar",
-          "Dissolved feathers"
+          "Dissolved sugar",
+          "Tiny sand grains"
         ],
         "correctIndex": 1,
         "explanation": "Seawater contains dissolved ions, including sodium and chloride."
@@ -7019,9 +7019,9 @@
         "prompt": "Which process can make ocean water more acidic as atmospheric CO₂ rises?",
         "options": [
           "Dissolving carbon dioxide",
-          "Adding only sunlight",
-          "Freezing every wave",
-          "Removing all dissolved gases"
+          "Evaporation of surface water",
+          "An increase in ocean wave height",
+          "Removal of dissolved carbon dioxide"
         ],
         "correctIndex": 0,
         "explanation": "Dissolved carbon dioxide changes seawater chemistry."
@@ -7118,9 +7118,9 @@
         "prompt": "What does recycling aim to do?",
         "options": [
           "Turn suitable waste into new materials",
-          "Mix every material with food scraps",
-          "Create more litter",
-          "Make all waste disappear instantly"
+          "Store all kinds of waste in one landfill",
+          "Burn all waste to produce heat",
+          "Use products once and replace them"
         ],
         "correctIndex": 0,
         "explanation": "Recycling recovers materials for further use."
@@ -7161,20 +7161,20 @@
       {
         "prompt": "What is migration in animals?",
         "options": [
-          "Always staying in one nest",
-          "Losing every feather at once",
-          "Turning into a plant",
+          "Growing a thicker winter coat",
+          "Sleeping through the cold season",
+          "Changing diet in one habitat",
           "Seasonal movement between regions"
         ],
         "correctIndex": 3,
         "explanation": "Animals may migrate to find food or suitable breeding conditions."
       },
       {
-        "prompt": "Which is a pollinator?",
+        "prompt": "Which of these is a common insect pollinator?",
         "options": [
-          "Mushroom",
-          "Stone",
-          "Earthworm only",
+          "Earthworm",
+          "Spider",
+          "Centipede",
           "Bee"
         ],
         "correctIndex": 3,
@@ -7183,10 +7183,10 @@
       {
         "prompt": "Why are wetlands valuable?",
         "options": [
-          "They contain no life",
+          "They replace every other type of habitat",
           "They support wildlife and help manage water",
-          "They prevent all rain",
-          "They make every river dry"
+          "They keep all soil dry throughout the year",
+          "They stop all water flowing downstream"
         ],
         "correctIndex": 1,
         "explanation": "Wetlands provide habitats and can store and filter water."

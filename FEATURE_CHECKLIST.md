@@ -57,7 +57,7 @@ authored entries and should grow with reviewed, versioned question content.
 
 - [x] Plain, descriptive names for all 50 ready quizzes and plausible related options.
 - [x] Explicit catalogue refresh preserving existing attempts, progress and creators.
-- [x] Animated hero scene with 3D books, camera depth, pause and reduced motion.
+- [x] Rendered looping hero video with blinking characters, moving water/light, mobile source, pause, poster fallback and reduced motion.
 - [x] Participant play shell without creator sidebar or login prompts.
 - [x] Public `/me` with persistent complete history, review/resume, levels and prizes.
 - [x] Authenticated `/dashboard` with creator aggregates and private participant results.

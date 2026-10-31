@@ -266,9 +266,20 @@ databases and auth URLs for previews. Deployment is not part of this initial set
 - `/create`: question editor, publication/sharing and management, linked from overview.
 - `/quests`: the earlier personal-quest feature, retained to preserve existing data.
 
-The homepage hero uses a slowly moving camera, pointer-responsive depth, floating
-CSS 3D books, glowing rings and particles. It has a pause control and honours reduced
-motion. This is an animated scene rendered in the browser, not an exported GIF file.
+The homepage hero now plays an actual eight-second rendered cinemagraph, built from
+the original artwork with breathing characters, blinking eyes, floating books,
+water highlights, portal glow and fireflies. Self-hosted WebM/MP4 files loop muted
+and inline. Mobile uses a 768px MP4 (about 178 KiB); desktop uses 1280px MP4 with
+WebM fallback (about 625–678 KiB). An optimized poster stays visible until playback
+starts and also handles loading/playback failures. Reduced-motion and data-saving
+preferences skip loading the video. Playback pauses outside the viewport or while
+the browser tab is hidden, and a button lets players pause or resume it.
+
+To regenerate these video assets, install Python Pillow and ffmpeg, then run
+`python3 scripts/render-hero-video.py` from the repository root. This renders the
+animation locally; it does not call an external AI video service. The original
+artwork is unchanged. Files are already included under `apps/web/public/videos/`.
+
 All 50 catalogue titles now describe their subject plainly. Generic English/CSS
 filler answers have been replaced with topic-relevant distractors. To update a
 previously seeded installation without losing play records, run

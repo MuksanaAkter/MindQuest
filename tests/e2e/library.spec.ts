@@ -26,33 +26,38 @@ test("seed library rewards best-score improvements, unlocks avatars once, and pe
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs migrated and seeded PostgreSQL."); test.setTimeout(90000);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL }); let ownerKey: string | undefined;
   try {
-    const initial: PlayerState = await (await request.get("/api/player")).json(); expect(initial.level).toBe(1);
+    const initial: PlayerState = await (await request.get("/api/player")).json(); expect(initial.level).toBe(1); expect(initial.unlockedAvatars).toHaveLength(5); expect(initial.trophies).toEqual([]);
     const guest = (await request.storageState()).cookies.find((cookie) => cookie.name === "mq_guest")!; ownerKey = `guest:${guest.value}`;
     const catalogue = (await (await request.get("/api/quizzes/public")).json()) as { quizzes: PublicQuiz[] };
     const seeded = catalogue.quizzes.filter((q) => q.builtIn); expect(seeded).toHaveLength(50); expect(seeded.every((q) => q.questionCount === 15)).toBe(true);
     expect((await request.post("/api/quizzes/join", { data: { code: seeded[0].code, name: "Explorer", avatar: "phoenix" } })).status()).toBe(403);
     const first = await finish(pool, request, seeded[0].code, 13); expect(first.playerReward?.xp).toBe(130); expect(first.playerReward?.unlockedAvatar).toBeNull();
-    const improved = await finish(pool, request, seeded[0].code, 14); expect(improved.playerReward?.xp).toBe(110); expect(improved.playerReward?.coins).toBe(52); expect(improved.playerReward?.unlockedAvatar).toBe("phoenix");
-    const repeated = await finish(pool, request, seeded[0].code, 14, "phoenix"); expect(repeated.playerReward?.xp).toBe(0); expect(repeated.playerReward?.coins).toBe(0); expect(repeated.playerReward?.unlockedAvatar).toBeNull();
-    const next = await finish(pool, request, seeded[1].code, 15, "phoenix"); expect(next.playerReward?.unlockedAvatar).toBe("robot"); expect(next.playerReward?.level).toBe(2);
-    const saved: PlayerState = await (await request.get("/api/player")).json(); expect(saved.totalXp).toBe(490); expect(saved.coins).toBe(158); expect(saved.masteredQuizzes).toBe(2); expect(saved.unlockedAvatars).toContain("phoenix"); expect(saved.bestByQuiz[seeded[0].id]).toBe(93);
+    const improved = await finish(pool, request, seeded[0].code, 14); expect(improved.playerReward?.xp).toBe(110); expect(improved.playerReward?.coins).toBe(52); expect(improved.playerReward?.unlockedAvatar).toBeNull(); expect(improved.playerReward?.trophy).toBe(true); expect(improved.playerReward?.newTrophy).toBe(true);
+    expect((await request.post("/api/quizzes/join", { data: { code: seeded[0].code, name: "Explorer", avatar: "phoenix" } })).status()).toBe(403);
+    const repeated = await finish(pool, request, seeded[0].code, 14, "owl"); expect(repeated.playerReward?.xp).toBe(0); expect(repeated.playerReward?.coins).toBe(0); expect(repeated.playerReward?.newTrophy).toBe(false); expect(repeated.playerReward?.unlockedAvatar).toBeNull();
+    const next = await finish(pool, request, seeded[1].code, 15, "owl"); expect(next.playerReward?.unlockedAvatar).toBe("phoenix"); expect(next.playerReward?.level).toBe(2);
+    const saved: PlayerState = await (await request.get("/api/player")).json(); expect(saved.totalXp).toBe(490); expect(saved.coins).toBe(158); expect(saved.masteredQuizzes).toBe(2); expect(saved.trophies).toHaveLength(2); expect(saved.unlockedAvatars).toHaveLength(6); expect(saved.unlockedAvatars).toContain("phoenix"); expect(saved.bestByQuiz[seeded[0].id]).toBe(93);
     const restored: ArenaView = await (await request.get(`/api/arena/${next.id}`)).json(); expect(restored.playerReward).toEqual(next.playerReward);
     await page.context().addCookies((await request.storageState()).cookies);
+    await pool.query(`UPDATE "GameAttempt" SET state=jsonb_set(state, '{quiz,title}', to_jsonb($2::text)) WHERE id=$1`, [next.id, "Old fantasy quiz name"]);
     await page.goto(`/play/${next.id}`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(seeded[1].title);
     await expect(page.getByRole("region", { name: "Your quiz rewards", exact: true })).toBeVisible();
-    await expect(page.getByText("New avatar unlocked: robot!", { exact: true })).toBeVisible();
+    await expect(page.getByText("New avatar unlocked: phoenix!", { exact: true })).toBeVisible();
     await expect(page.getByText("Level up! You’re now a level 2 explorer.", { exact: false })).toBeVisible();
     await page.getByRole("link", { name: "Join another quiz", exact: true }).click();
     await expect(page).toHaveURL(/\/#join-quiz$/);
-    await page.getByRole("button", { name: "Choose robot avatar", exact: true }).click();
-    await expect(page.getByRole("button", { name: "robot avatar", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Choose phoenix avatar", exact: true }).click();
+    await expect(page.getByRole("button", { name: "phoenix avatar", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.goto("/me");
     await expect(page.getByRole("heading", { name: "My past games", exact: true })).toBeVisible();
     await expect(page.locator(".adventure-record")).toHaveCount(4);
-    await expect(page.getByRole("link", { name: "Play with robot", exact: true })).toBeVisible();
+    await expect(page.locator(".trophy-shelf article")).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Play with phoenix", exact: true })).toBeVisible();
     await expect(page.getByText("Level 2", { exact: true })).toBeVisible();
     await page.reload();
     await expect(page.locator(".adventure-record")).toHaveCount(4);
+    await expect(page.locator(".trophy-shelf article")).toHaveCount(2);
     await page.locator(".adventure-record").first().getByRole("link", { name: "See my result", exact: true }).click();
     await expect(page.getByRole("complementary", { name: "Game navigation" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "My adventure", exact: true }).first()).toBeVisible();
@@ -68,6 +73,18 @@ test("seed library rewards best-score improvements, unlocks avatars once, and pe
     const other = await page.context().browser()!.newContext();
     try { expect((await other.request.get(`http://localhost:3000/api/player/history?cursor=${next.id}`)).status()).toBe(404); }
     finally { await other.close(); }
+    const levelOnly = await finish(pool, request, seeded[2].code, 11, "phoenix");
+    expect(levelOnly.playerReward?.level).toBe(3);
+    expect(levelOnly.playerReward?.unlockedAvatar).toBe("robot");
+    expect(levelOnly.playerReward?.trophy).toBe(false);
+    expect(levelOnly.playerReward?.newTrophy).toBe(false);
+    const afterLevel: PlayerState = await (await request.get("/api/player")).json();
+    expect(afterLevel.unlockedAvatars).toHaveLength(7); expect(afterLevel.trophies).toHaveLength(2);
+    await pool.query('UPDATE "PlayerProfile" SET "totalXp"=3000 WHERE "ownerKey"=$1', [ownerKey]);
+    const maxLevel: PlayerState = await (await request.get("/api/player")).json();
+    expect(maxLevel.level).toBe(11); expect(maxLevel.unlockedAvatars).toHaveLength(15);
+    expect((await request.post("/api/quizzes/join", {data:{code:seeded[2].code,name:"Explorer",avatar:"panda"}})).status()).toBe(200);
+
 
 
 

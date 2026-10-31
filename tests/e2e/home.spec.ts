@@ -41,10 +41,16 @@ test("public landing leads to matching auth pages and guest Arena", async ({ pag
 test("hero animation can be paused and player adventure is outside creator dashboard", async ({ page }) => {
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs the local database and creator auth environment.");
   await page.goto("/");
+  const video = page.getByTestId("hero-video");
+  await expect(video).toHaveJSProperty("muted", true);
+  await expect(video).toHaveJSProperty("loop", true);
+  await expect.poll(() => video.evaluate((element) => (element as HTMLVideoElement).currentTime)).toBeGreaterThan(.1);
   await page.getByRole("button", { name: "Pause animation", exact: true }).click();
+  await expect(video).toHaveJSProperty("paused", true);
   await expect(page.getByRole("button", { name: "Play animation", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Play animation", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause animation", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(video).toHaveJSProperty("paused", false);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.getByRole("link", { name: "My adventure", exact: true }).first().click();
@@ -53,4 +59,37 @@ test("hero animation can be paused and player adventure is outside creator dashb
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login$/);
+});
+
+
+test("reduced motion shows a poster without requesting hero video", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const videoRequests: string[] = [];
+  page.on("request", request => { if (/\.(mp4|webm)(?:\?|$)/.test(request.url())) videoRequests.push(request.url()); });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Still image", exact: true })).toBeDisabled();
+  await expect(page.getByTestId("hero-video")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Little questions.");
+  expect(videoRequests).toHaveLength(0);
+});
+
+test("mobile hero uses the lightweight video and retains readable content", async ({ page }) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto("/");
+  const video = page.getByTestId("hero-video");
+  await expect.poll(() => video.evaluate(element => (element as HTMLVideoElement).currentSrc)).toContain("mindquest-kingdom-mobile.mp4");
+  await expect.poll(() => video.evaluate(element => (element as HTMLVideoElement).currentTime)).toBeGreaterThan(.1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
+
+test("failed hero video keeps a readable poster and usable navigation", async ({ page }) => {
+  await page.route(/\.(mp4|webm)(?:\?|$)/, route => route.abort());
+  const finalSource = page.waitForRequest("**/mindquest-kingdom.webm");
+  await page.goto("/");
+  await finalSource;
+  await expect(page.getByRole("button", { name: "Still image", exact: true })).toBeDisabled();
+  await expect(page.getByTestId("hero-video")).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "A friendly purple owl and orange fox exploring an enchanted floating castle" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explore free quizzes", exact: true })).toBeVisible();
 });
