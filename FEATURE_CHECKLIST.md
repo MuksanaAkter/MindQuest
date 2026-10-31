@@ -52,3 +52,13 @@ authored entries and should grow with reviewed, versioned question content.
 - [x] Personal-best reward deltas and transaction-safe duplicate prevention.
 - [x] Original friendly owl/fox artwork, animated sections, mobile and reduced motion.
 - [x] Reward, level-up, and avatar celebrations with persisted result snapshots.
+
+## Clear learning content and separate roles
+
+- [x] Plain, descriptive names for all 50 ready quizzes and plausible related options.
+- [x] Explicit catalogue refresh preserving existing attempts, progress and creators.
+- [x] Animated hero scene with 3D books, camera depth, pause and reduced motion.
+- [x] Participant play shell without creator sidebar or login prompts.
+- [x] Public `/me` with persistent complete history, review/resume, levels and prizes.
+- [x] Authenticated `/dashboard` with creator aggregates and private participant results.
+- [x] Pagination and ownership checks for player history and creator reports.

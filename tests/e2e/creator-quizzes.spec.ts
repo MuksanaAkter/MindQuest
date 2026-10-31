@@ -44,6 +44,12 @@ test("only creators log in; a named avatar can join, finish, and appear in priva
     await expect(participant.getByText("Ada Explorer · Your result is saved for the quiz creator.")).toBeVisible();
     await participant.reload(); await expect(participant.getByText("1/1", { exact: true })).toBeVisible();
     expect((await participant.request.get("/api/quizzes")).status()).toBe(401);
+    await page.goto("/dashboard");
+    await expect(page.getByRole("heading", { name: "Creator dashboard", exact: true })).toBeVisible();
+    await expect(page.getByText("Ada Explorer", { exact: true })).toBeVisible();
+    await expect(page.getByText("100% accuracy", { exact: true })).toBeVisible();
+    expect((await participant.request.get("/api/creator/overview")).status()).toBe(401);
+    await page.goto("/create");
     await page.getByRole("button", { name: "Refresh results", exact: true }).click();
     await expect(page.getByText("Ada Explorer", { exact: true })).toBeVisible();
     await expect(page.getByText("100 pts", { exact: false })).toBeVisible();
@@ -62,6 +68,8 @@ test("only creators log in; a named avatar can join, finish, and appear in priva
     otherCreatorId = ((await other.json()) as { user: { id: string } }).user.id;
     expect((await outsider.patch(`/api/quizzes/${quizId}`, { data: { published: false } })).status()).toBe(404);
     expect(await (await outsider.get("/api/quizzes")).json()).toEqual({ quizzes: [] });
+    expect((await outsider.get(`/api/quizzes/${quizId}/results`)).status()).toBe(404);
+    expect((await (await outsider.get("/api/creator/overview")).json()).totals.attempts).toBe(0);
     await page.getByRole("button", { name: "Close quiz", exact: true }).click();
     await expect(page.getByText("Closed to new participants")).toBeVisible();
     expect((await outsider.post("/api/quizzes/join", { data: { code, name: "New Player", avatar: "owl" } })).status()).toBe(404);

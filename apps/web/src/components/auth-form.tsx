@@ -26,7 +26,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       if (result.error) { setError(result.error.message ?? c.failed); return; }
       // A fresh document clears session-bound client caches after authentication.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/create");
+      window.location.assign("/dashboard");
     } catch { setError(c.unavailable); }
     finally { setPending(false); }
   }

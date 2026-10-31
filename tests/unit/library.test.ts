@@ -24,3 +24,11 @@ test("new-best rewards grant only the difference and mastery bonus once", () => 
   expect(rewardTarget(14, 15).xp - improved.xp).toBe(0);
   expect(playerLevel(299)).toBe(1); expect(playerLevel(300)).toBe(2); expect(playerLevel(600)).toBe(3);
 });
+test("English distractors are topic-specific and authored correct positions vary", () => {
+  const repeatedFillers = ["opposite", "purple", "colourful", "ordinary", "a type of weather forecast", "the name of a planet", "text-paint", "horizontal-size-name"];
+  const questions = catalogue.flatMap((quiz) => quiz.questions);
+  expect(new Set(questions.map((q) => q.correctIndex)).size).toBe(4);
+  for (const quiz of catalogue.filter((q) => q.topic === "English")) {
+    for (const question of quiz.questions) expect(question.options.some((option) => repeatedFillers.includes(option))).toBe(false);
+  }
+});

@@ -248,3 +248,28 @@ databases and auth URLs for previews. Deployment is not part of this initial set
 - [Better Auth installation](https://better-auth.com/docs/installation)
 - [Better Auth Prisma adapter](https://better-auth.com/docs/adapters/prisma)
 - [Prisma 7 + Next.js](https://www.prisma.io/docs/guides/v7/frameworks/nextjs)
+
+## Separate player and creator areas
+
+- `/play/[id]`: the participant-only game shell, with Home and My adventure links.
+  No creator sidebar, dashboard navigation or participant login prompt.
+- `/me`: public, browser-owned adventure book. It includes every saved quiz attempt
+  (library and creator quizzes), review/resume links, level progress, coins, mastery
+  badges and avatar collection. Older attempts load in pages of 30, not just a latest
+  history window. The existing `mq_guest` cookie identifies the player for up to 180 days.
+  Names are display names, not cross-device login credentials. Clearing cookies starts
+  a new browser identity; existing database records are retained.
+- `/dashboard`: authenticated creator overview, containing quiz counts, participation,
+  completion and average accuracy. Per-quiz participant results show name/avatar,
+  points, correct answers, accuracy and timestamps, with pagination. All queries are
+  restricted to quizzes belonging to the signed-in creator.
+- `/create`: question editor, publication/sharing and management, linked from overview.
+- `/quests`: the earlier personal-quest feature, retained to preserve existing data.
+
+The homepage hero uses a slowly moving camera, pointer-responsive depth, floating
+CSS 3D books, glowing rings and particles. It has a pause control and honours reduced
+motion. This is an animated scene rendered in the browser, not an exported GIF file.
+All 50 catalogue titles now describe their subject plainly. Generic English/CSS
+filler answers have been replaced with topic-relevant distractors. To update a
+previously seeded installation without losing play records, run
+`npm run db:seed -- --refresh-library`; ordinary `db:seed` remains insert-only.

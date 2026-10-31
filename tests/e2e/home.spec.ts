@@ -37,3 +37,20 @@ test("public landing leads to matching auth pages and guest Arena", async ({ pag
   await expect(page).toHaveURL(/\/#join-quiz$/);
   await expect(page.getByRole("heading", { name: "Ready to play?" })).toBeVisible();
 });
+
+test("hero animation can be paused and player adventure is outside creator dashboard", async ({ page }) => {
+  test.skip(process.env.RUN_DB_E2E !== "1", "Needs the local database and creator auth environment.");
+  await page.goto("/");
+  await page.getByRole("button", { name: "Pause animation", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Play animation", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Play animation", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Pause animation", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.getByRole("link", { name: "My adventure", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/me$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Look how far you’ve come");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/login$/);
+});

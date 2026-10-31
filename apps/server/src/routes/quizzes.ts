@@ -53,10 +53,54 @@ export async function JOIN(request: Request) { return guarded(async () => {
     if (!open.length) throw new ArenaError(404, "This quiz is closed to new participants.");
     const existing = await tx.gameAttempt.findFirst({ where: { ownerKey, quizId: quiz.id, participantName: input.name, participantAvatar: input.avatar, completedAt: null, abandonedAt: null } });
     if (existing) return existing;
-    if (await tx.gameAttempt.count({ where: { ownerKey, quizId: quiz.id } }) >= 20) throw new ArenaError(429, "You have reached the attempt limit for this quiz.");
+    if (await tx.gameAttempt.count({ where: { ownerKey, quizId: quiz.id, startedAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } } }) >= 20) throw new ArenaError(429, "You have started lots of attempts recently. Please try this quiz again later.");
     return tx.gameAttempt.create({ data: { ownerKey, quizId: quiz.id, participantName: input.name, participantAvatar: input.avatar, config: json({ category: "mixed", difficulty: "EASY", timed: quiz.timed, daily: false }), state: json({ phase: "question", index: 0, questions, answers: [], questionStartedAt: new Date().toISOString(), streak: 0, quiz: { title: quiz.title, code: quiz.code, builtIn: quiz.builtIn } }) } });
   });
   return { attempt: publicView(attempt) };
 }); }
 
 export async function PLAYER() { return guarded(async () => getPlayer(await guestIdentity())); }
+
+export async function HISTORY(request: Request) { return guarded(async () => {
+  const ownerKey = await guestIdentity(); const db = getDb();
+  const cursor = z.string().max(100).optional().parse(new URL(request.url).searchParams.get("cursor") ?? undefined);
+  const where = { ownerKey, quizId: { not: null } };
+  // A cursor belonging to someone else cannot influence this player's history.
+  if (cursor && !await db.gameAttempt.findFirst({ where: { ...where, id: cursor }, select: { id: true } })) throw new ArenaError(404, "History page not found.");
+  const [player, rows, totalAttempts, finishedAttempts] = await Promise.all([
+    getPlayer(ownerKey), db.gameAttempt.findMany({ where, take: 31, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), orderBy: [{ startedAt: "desc" }, { id: "desc" }], include: { quiz: { select: { title: true, code: true, icon: true } } } }),
+    db.gameAttempt.count({ where }), db.gameAttempt.count({ where: { ...where, completedAt: { not: null } } }),
+  ]);
+  const attempts = rows.slice(0, 30).map((a) => {
+    const state = a.state as { questions?: unknown[]; answers?: unknown[]; playerReward?: import("../quizzes/contracts").PlayerRewardSummary };
+    const total = state.questions?.length ?? 0;
+    return { id: a.id, quizId: a.quizId!, title: a.quiz!.title, code: a.quiz!.code, icon: a.quiz!.icon, name: a.participantName ?? "Explorer", avatar: a.participantAvatar ?? "owl", total, correct: a.correctCount, answered: state.answers?.length ?? 0, score: a.score, accuracy: a.completedAt && total ? Math.round(a.correctCount / total * 100) : null, startedAt: a.startedAt.toISOString(), completedAt: a.completedAt?.toISOString() ?? null, abandoned: Boolean(a.abandonedAt), reward: state.playerReward ?? null };
+  });
+  return { player, attempts, totalAttempts, finishedAttempts, nextCursor: rows.length > 30 ? attempts.at(-1)!.id : null };
+}); }
+
+export async function CREATOR_OVERVIEW() { return guarded(async () => {
+  const creatorId = await creator(); const db = getDb();
+  const quizzes = await db.quiz.findMany({ where: { creatorId }, orderBy: { createdAt: "desc" } });
+  const ids = quizzes.map((q) => q.id);
+  const [counts, completed] = await Promise.all([
+    db.gameAttempt.groupBy({ by: ["quizId"], where: { quizId: { in: ids } }, _count: { _all: true } }),
+    db.gameAttempt.groupBy({ by: ["quizId"], where: { quizId: { in: ids }, completedAt: { not: null } }, _count: { _all: true }, _avg: { correctCount: true } }),
+  ]);
+  const data = quizzes.map((q) => {
+    const stats = completed.find((s) => s.quizId === q.id); const questionCount = (q.questions as unknown[]).length;
+    return { id: q.id, title: q.title, code: q.code, timed: q.timed, published: q.published, questionCount, attempts: counts.find((s) => s.quizId === q.id)?._count._all ?? 0, finished: stats?._count._all ?? 0, averageAccuracy: stats?._avg.correctCount != null ? Math.round(stats._avg.correctCount / questionCount * 100) : null };
+  });
+  return { quizzes: data, totals: { quizzes: data.length, published: data.filter((q) => q.published).length, attempts: data.reduce((n, q) => n + q.attempts, 0), finished: data.reduce((n, q) => n + q.finished, 0) } };
+}); }
+
+export async function CREATOR_RESULTS(request: Request, context: { params: Promise<{ id: string }> }) { return guarded(async () => {
+  const creatorId = await creator(); const { id } = await context.params; const db = getDb();
+  const quiz = await db.quiz.findFirst({ where: { id, creatorId }, select: { questions: true } });
+  if (!quiz) throw new ArenaError(404, "Quiz not found.");
+  const cursor = z.string().max(100).optional().parse(new URL(request.url).searchParams.get("cursor") ?? undefined);
+  if (cursor && !await db.gameAttempt.findFirst({ where: { id: cursor, quizId: id }, select: { id: true } })) throw new ArenaError(404, "Results page not found.");
+  const [rows, total] = await Promise.all([db.gameAttempt.findMany({ where: { quizId: id }, take: 31, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), orderBy: [{ startedAt: "desc" }, { id: "desc" }] }), db.gameAttempt.count({ where: { quizId: id } })]);
+  const participants = rows.slice(0, 30).map((a) => ({ id: a.id, name: a.participantName ?? "Participant", avatar: a.participantAvatar ?? "owl", score: a.score, correct: a.correctCount, total: (quiz.questions as unknown[]).length, startedAt: a.startedAt.toISOString(), completedAt: a.completedAt?.toISOString() ?? null }));
+  return { participants, total, nextCursor: rows.length > 30 ? participants.at(-1)!.id : null };
+}); }

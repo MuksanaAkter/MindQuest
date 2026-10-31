@@ -46,6 +46,30 @@ test("seed library rewards best-score improvements, unlocks avatars once, and pe
     await expect(page).toHaveURL(/\/#join-quiz$/);
     await page.getByRole("button", { name: "Choose robot avatar", exact: true }).click();
     await expect(page.getByRole("button", { name: "robot avatar", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await page.goto("/me");
+    await expect(page.getByRole("heading", { name: "My past games", exact: true })).toBeVisible();
+    await expect(page.locator(".adventure-record")).toHaveCount(4);
+    await expect(page.getByRole("link", { name: "Play with robot", exact: true })).toBeVisible();
+    await expect(page.getByText("Level 2", { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".adventure-record")).toHaveCount(4);
+    await page.locator(".adventure-record").first().getByRole("link", { name: "See my result", exact: true }).click();
+    await expect(page.getByRole("complementary", { name: "Game navigation" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "My adventure", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Create a quiz", exact: true })).toHaveCount(0);
+    // More than one history page must remain visible, without another browser's records.
+    await pool.query('INSERT INTO "GameAttempt" (id,"ownerKey","quizId","participantName","participantAvatar",mode,config,state,score,"correctCount","bestStreak","xpAwarded","startedAt","completedAt") SELECT $1 || n, "ownerKey","quizId","participantName","participantAvatar",mode,config,state,score,"correctCount","bestStreak","xpAwarded",NOW(),NOW() FROM "GameAttempt" CROSS JOIN generate_series(1,31) AS n WHERE id=$2', [`history-${next.id}-`, next.id]);
+    const history = await (await request.get("/api/player/history")).json();
+    expect(history.totalAttempts).toBe(35); expect(history.attempts).toHaveLength(30);
+    expect(history.attempts[0]).not.toHaveProperty("state");
+    const older = await (await request.get(`/api/player/history?cursor=${history.nextCursor}`)).json();
+    expect(older.attempts).toHaveLength(5); expect(older.nextCursor).toBeNull();
+    expect(new Set([...history.attempts, ...older.attempts].map((a: { id: string }) => a.id)).size).toBe(35);
+    const other = await page.context().browser()!.newContext();
+    try { expect((await other.request.get(`http://localhost:3000/api/player/history?cursor=${next.id}`)).status()).toBe(404); }
+    finally { await other.close(); }
+
+
 
   } finally {
     if (ownerKey) { await pool.query('DELETE FROM "GameAttempt" WHERE "ownerKey"=$1', [ownerKey]); await pool.query('DELETE FROM "PlayerProfile" WHERE "ownerKey"=$1', [ownerKey]); }
@@ -57,12 +81,12 @@ test("kids library supports topic filters, search, quest selection, locked frien
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.getByRole("button", { name: "Math", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Play Addition Alchemy", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Play Addition Alchemy", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Play Adding Numbers", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Play Adding Numbers", exact: true }).click();
   await expect(page.getByLabel("Quiz code", { exact: true })).toHaveValue("MQLIBAAA");
   await expect(page.getByRole("button", { name: "Locked phoenix avatar", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "All quests", exact: true }).click();
   await page.getByRole("textbox", { name: "Search quizzes" }).fill("Solar System");
-  await expect(page.getByRole("button", { name: "Play Solar System Starship", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play Planets in Our Solar System", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });

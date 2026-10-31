@@ -88,3 +88,17 @@ locked avatar. The result stores a reward snapshot; rereading it grants nothing.
 Avatar equipment is checked server-side against base and persisted unlocked avatars.
 Levels derive from XP at 300 XP per level. Guest progress is browser-scoped rather
 than nickname-authenticated, and has no cash, purchase, or competitive value.
+
+## Player adventure book and creator reporting
+
+Player history uses the existing guest owner key even while a creator session exists.
+`GET /api/player/history` returns metadata and saved reward snapshots, never question
+snapshots or unearned answers. It paginates all quiz attempts by startedAt/id, validates
+cursor ownership, and includes unfinished games for resume. `/me` needs no login.
+Creator reporting is separate: `/api/creator/overview` groups attempts across only
+owned quizzes, while `/api/quizzes/[id]/results` authenticates the creator and checks
+quiz ownership before returning a page. Scores in progress are labelled unfinished;
+average accuracy includes completed attempts only. Both routes avoid fixed history caps.
+Editorial catalogue refreshes update trusted seed rows only. Stored attempt questions
+remain unchanged. `/play` reuses the tested Arena engine with a distinct participant
+shell, and `/dashboard` is now dedicated to creator reporting.
