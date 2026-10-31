@@ -6,9 +6,9 @@ import type { AnswerReview, ArenaConfig, ArenaOverview, ArenaView } from "../sha
 import { answerPoints, QUESTION_SECONDS, resultRank, roundXp } from "../shared/scoring";
 import { QUESTIONS } from "./questions";
 import { seededRandom, selectQuestions, shuffled } from "./selection";
-export type Owner = { key: string; userId: string | null; name: string };
-type StoredQuestion = { id: string; choices: { id: string; option: number }[] };
-type AttemptState = { phase: ArenaView["phase"]; index: number; questions: StoredQuestion[]; answers: AnswerReview[]; questionStartedAt: string; streak: number };
+export type Owner = { key: string; userId: string | null; name: string; guestKey?: string };
+type StoredQuestion = { snapshot?: { id: string; category: "science"; prompt: string; options: string[]; explanation: string }; id: string; choices: { id: string; option: number }[] };
+type AttemptState = { phase: ArenaView["phase"]; index: number; questions: StoredQuestion[]; answers: AnswerReview[]; questionStartedAt: string; streak: number; quiz?: { title: string; code: string } };
 export class ArenaError extends Error { constructor(public status: number, message: string) { super(message); } }
 const asJson = (value: object) => value as unknown as Prisma.InputJsonValue;
 const stateOf = (attempt: GameAttempt) => attempt.state as unknown as AttemptState;
@@ -20,24 +20,25 @@ function questionFor(id: string) {
 }
 export function publicView(attempt: GameAttempt): ArenaView {
   const state = stateOf(attempt); const config = configOf(attempt);
-  const stored = state.questions[state.index]; const q = stored ? questionFor(stored.id) : null;
+  const stored = state.questions[state.index]; const q = stored ? stored.snapshot ?? questionFor(stored.id) : null;
   return {
+    ...(attempt.quizId && state.quiz ? { quiz: { id: attempt.quizId, title: state.quiz.title, code: state.quiz.code, participantName: attempt.participantName ?? "Participant", avatar: attempt.participantAvatar ?? "owl" } } : {}),
     id: attempt.id, config, phase: state.phase, index: state.index, total: state.questions.length,
     score: attempt.score, correctCount: attempt.correctCount, streak: state.streak,
     bestStreak: attempt.bestStreak, xpAwarded: attempt.xpAwarded, authenticated: !!attempt.userId,
     question: state.phase === "question" && q ? { id: q.id, category: q.category, prompt: q.prompt, options: stored.choices.map((c) => ({ id: c.id, text: q.options[c.option] })) } : null,
     deadline: config.timed && state.phase === "question" ? new Date(new Date(state.questionStartedAt).getTime() + QUESTION_SECONDS[config.difficulty] * 1000).toISOString() : null,
     serverTime: new Date().toISOString(), feedback: state.phase === "feedback" ? state.answers.at(-1) ?? null : null,
-    reviews: state.answers, rank: resultRank(attempt.correctCount),
+    reviews: state.answers, rank: resultRank(Math.round(attempt.correctCount / state.questions.length * 5)),
   };
 }
 export async function overview(owner: Owner): Promise<ArenaOverview> {
   const db = getDb();
   const [history, active, progress, daily] = await Promise.all([
-    db.gameAttempt.findMany({ where: { ownerKey: owner.key, completedAt: { not: null } }, orderBy: { completedAt: "desc" }, take: 30 }),
-    db.gameAttempt.findFirst({ where: { ownerKey: owner.key, completedAt: null, abandonedAt: null }, orderBy: { startedAt: "desc" } }),
+    db.gameAttempt.findMany({ where: { ownerKey: owner.key, quizId: null, completedAt: { not: null } }, orderBy: { completedAt: "desc" }, take: 30 }),
+    db.gameAttempt.findFirst({ where: { ownerKey: owner.key, quizId: null, completedAt: null, abandonedAt: null }, orderBy: { startedAt: "desc" } }),
     owner.userId ? db.progress.findUnique({ where: { userId: owner.userId } }) : null,
-    db.gameAttempt.findFirst({ where: { ownerKey: owner.key, completedAt: { not: null }, startedAt: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") }, config: { path: ["daily"], equals: true } }, select: { id: true } }),
+    db.gameAttempt.findFirst({ where: { ownerKey: owner.key, quizId: null, completedAt: { not: null }, startedAt: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") }, config: { path: ["daily"], equals: true } }, select: { id: true } }),
   ]);
   return { authenticated: !!owner.userId, name: owner.name, totalXp: progress?.totalXp ?? 0, activeId: active?.id ?? null,
     dailyCompleted: !!daily,
@@ -53,20 +54,20 @@ export async function startRound(owner: Owner, requested: ArenaConfig) {
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${owner.key}))::text`;
     const recent = await tx.gameAttempt.count({ where: { ownerKey: owner.key, startedAt: { gte: new Date(now.getTime() - 3600000) } } });
     if (recent >= 60) throw new ArenaError(429, "Take a short break. You can start more expeditions in an hour.");
-    await tx.gameAttempt.updateMany({ where: { ownerKey: owner.key, completedAt: null, abandonedAt: null }, data: { abandonedAt: now } });
+    await tx.gameAttempt.updateMany({ where: { ownerKey: owner.key, quizId: null, completedAt: null, abandonedAt: null }, data: { abandonedAt: now } });
     return tx.gameAttempt.create({ data: { ownerKey: owner.key, userId: owner.userId, config: asJson(config), state: asJson(state) } });
   });
   return publicView(attempt);
 }
 export async function readRound(owner: Owner, id: string) {
-  const attempt = await getDb().gameAttempt.findFirst({ where: { id, ownerKey: owner.key, abandonedAt: null } });
+  const attempt = await getDb().gameAttempt.findFirst({ where: { id, ownerKey: { in: [owner.key, ...(owner.guestKey ? [owner.guestKey] : [])] }, abandonedAt: null } });
   if (!attempt) throw new ArenaError(404, "Expedition not found. Start a new round.");
   const view = publicView(attempt);
   return attempt.completedAt ? { ...view, phase: "results" as const, feedback: null, question: null, deadline: null } : view;
 }
 export async function actOnRound(owner: Owner, id: string, action: { action: "answer"; questionId: string; choiceId: string | null } | { action: "next"; questionId: string }) {
   return getDb().$transaction(async (tx) => {
-    const locked = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "GameAttempt" WHERE "id" = ${id} AND "ownerKey" = ${owner.key} AND "abandonedAt" IS NULL FOR UPDATE`;
+    const locked = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "GameAttempt" WHERE "id" = ${id} AND ("ownerKey" = ${owner.key} OR "ownerKey" = ${owner.guestKey ?? owner.key}) AND "abandonedAt" IS NULL FOR UPDATE`;
     if (!locked.length) throw new ArenaError(404, "Expedition not found. Start a new round.");
     const attempt = await tx.gameAttempt.findUniqueOrThrow({ where: { id } });
     const state = stateOf(attempt); const config = configOf(attempt); const stored = state.questions[state.index];
@@ -78,7 +79,7 @@ export async function actOnRound(owner: Owner, id: string, action: { action: "an
       return publicView(await tx.gameAttempt.update({ where: { id }, data: { state: asJson(state) } }));
     }
     if (state.phase !== "question") return publicView(attempt);
-    const q = questionFor(stored.id); const chosen = stored.choices.find((c) => c.id === action.choiceId);
+    const q = stored.snapshot ?? questionFor(stored.id); const chosen = stored.choices.find((c) => c.id === action.choiceId);
     if (action.choiceId !== null && !chosen) throw new ArenaError(400, "Choose one of the available answers.");
     const timedOut = config.timed && Date.now() >= new Date(state.questionStartedAt).getTime() + QUESTION_SECONDS[config.difficulty] * 1000;
     if (action.choiceId === null && !timedOut) throw new ArenaError(400, "Select an answer before continuing.");
@@ -90,7 +91,7 @@ export async function actOnRound(owner: Owner, id: string, action: { action: "an
     const correctCount = attempt.correctCount + Number(correct);
     const completed = state.answers.length === state.questions.length;
     let xpAwarded = 0;
-    if (completed && owner.userId) {
+    if (completed && owner.userId && !attempt.quizId) {
       const claimKey = config.daily ? `daily:${owner.userId}:${attempt.startedAt.toISOString().slice(0, 10)}` : `attempt:${id}`;
       const xp = roundXp(correctCount, config.difficulty);
       const claimed = await tx.gameReward.createMany({ data: [{ attemptId: id, userId: owner.userId, claimKey, xp }], skipDuplicates: true });

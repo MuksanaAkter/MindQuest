@@ -56,7 +56,7 @@ test("mobile timed play submits expiration and starts a fresh clock on the next 
   try {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
+    await page.goto("/arena");
     await expect(page.getByRole("button", { name: "Begin expedition" })).toBeEnabled();
     const started = await page.request.post("/api/arena", { data: { category: "science", difficulty: "HARD", timed: true, daily: false } });
     const round: ArenaView = await started.json();

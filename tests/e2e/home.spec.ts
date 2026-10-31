@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 test("visitor can explore Arena settings and the guide", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/arena");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Knowledge Arena");
   await page.getByRole("button", { name: "Enter the arena" }).click();
   await page.getByRole("button", { name: /Science & nature/ }).click();
@@ -16,4 +16,23 @@ test("health endpoint responds", async ({ request }) => {
   const response = await request.get("/api/health");
   expect(response.ok()).toBeTruthy();
   expect(await response.json()).toEqual({ status: "ok", service: "mindquest" });
+});
+
+
+test("public landing leads to matching auth pages and guest Arena", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Your mind holds");
+  await page.getByRole("link", { name: "Start your adventure", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/signup$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your adventure starts here.");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.getByLabel("Password", { exact: true }).fill("Example-password-42!");
+  await page.getByRole("button", { name: "Show password", exact: true }).click();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "text");
+  await page.getByRole("link", { name: "Log in", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome back, explorer.");
+  await page.getByRole("link", { name: "Explore as a guest", exact: true }).click();
+  await expect(page).toHaveURL(/\/arena$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Knowledge Arena");
 });

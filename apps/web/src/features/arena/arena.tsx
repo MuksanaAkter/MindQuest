@@ -116,7 +116,7 @@ export function Arena() {
   const CategoryIcon = categoryIcons[currentCategory];
   return <div className="arena-shell">
     <aside className="arena-sidebar" aria-label={c.navigation}>
-      <Link href="/" className="arena-brand" onClick={round ? (e) => { e.preventDefault(); lobby(); } : undefined}><span className="arena-brand-mark"><BookOpen size={23} strokeWidth={1.4} /></span>{c.brand}</Link><p className="arena-tagline">{c.tagline}</p>
+      <Link href="/" className="arena-brand"><span className="arena-brand-mark"><BookOpen size={23} strokeWidth={1.4} /></span>{c.brand}</Link><p className="arena-tagline">{c.tagline}</p>
       <p className="arena-nav-label">{c.adventure}</p>
       <button className="arena-nav-link active" onClick={lobby}><Swords size={17} />{c.title}<ChevronRight size={12} className="ml-auto" /></button>
       <Link href="/dashboard" className="arena-nav-link"><Compass size={17} />{c.quests}</Link>

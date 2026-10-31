@@ -1,0 +1,12 @@
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight, Compass, Crown, Sparkles, BookOpen, Star } from "lucide-react";
+import { WorldBrand } from "./brand";
+import { publicCopy as c } from "./copy";
+import "./public.css";
+export function Landing() {
+  return <div className="public-world"><div className="landing-hero"><div className="landing-art"><Image src="/images/knowledge-kingdom.png" alt="A magical academy on floating islands beneath a violet sky" fill preload loading="eager" sizes="100vw" /></div><div className="landing-shade" /><header className="world-nav world-container"><WorldBrand /><nav className="world-nav-links" aria-label="Main navigation"><a className="world-explore" href="#experience">{c.explore}</a><Link href="/login">{c.login}</Link><Link href="/signup" className="world-button">{c.signup}<ArrowUpRight size={13} /></Link></nav></header><main className="landing-hero-content world-container"><div className="world-eyebrow"><Sparkles size={13} />{c.eyebrow}</div><h1 className="serif">{c.title}</h1><p className="landing-hero-description">{c.description}</p><div className="landing-actions"><Link href="/signup" className="world-button">{c.signup}<ArrowRight size={16} /></Link><Link href="/arena" className="world-button secondary">{c.try}<Compass size={16} /></Link></div><p className="landing-guest-note">{c.guestNote}</p></main></div>
+    <section id="experience" className="landing-traits world-container" aria-label={c.explore}>{c.features.map((feature, i) => { const Icon = [Compass, BookOpen, Star][i]; return <article key={feature.title} className="landing-trait"><Icon size={23} strokeWidth={1.4} /><div><h2>{feature.title}</h2><p>{feature.text}</p></div></article>; })}</section>
+    <section className="landing-realm world-container"><div className="landing-realm-art"><Image src="/images/knowledge-kingdom.png" alt="The illuminated portal and castle of the Knowledge Kingdom" fill sizes="(max-width:720px) 100vw, 50vw" /><span className="world-eyebrow"><Crown size={12} />{c.available}</span></div><div><div className="world-eyebrow">{c.realm}</div><h2 className="serif">{c.arenaTitle}</h2><p>{c.arenaDescription}</p><Link href="/arena" className="world-button secondary">{c.arenaLink}<ArrowUpRight size={15} /></Link></div></section>
+    <footer className="world-footer world-container"><span>{c.brand} · {c.footer}</span><Link href="/signup">{c.signup} <ArrowRight size={11} className="inline" /></Link></footer></div>;
+}

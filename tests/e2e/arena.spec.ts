@@ -3,7 +3,7 @@ import type { ArenaView, ArenaOverview } from "@mindquest/server/arena/contracts
 const config = { category: "science", difficulty: "EASY", timed: false, daily: false };
 test("guest can play, reload, resume, review, and replay", async ({ page }) => {
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs a migrated PostgreSQL database.");
-  await page.goto("/");
+  await page.goto("/arena");
   await page.getByRole("button", { name: /Science & nature/ }).click();
   await page.getByRole("button", { name: "Begin expedition" }).click();
   await expect(page.getByRole("group", { name: "Answer choices" })).toBeVisible();

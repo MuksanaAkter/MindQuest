@@ -8,6 +8,8 @@ test("account owns its quests and completion awards XP once", async ({ page, pla
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill("Test-password-42!");
   await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/arena$/);
+  await page.goto("/dashboard");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep growing, Test Explorer.");
   const response = await page.request.post("/api/quests", { data: { title: "Read ten pages", difficulty: "EASY", userId: "forged-owner", xp: 9999 } });
   expect(response.status()).toBe(201);
@@ -27,8 +29,13 @@ test("account owns its quests and completion awards XP once", async ({ page, pla
     await expect(page.getByRole("button", { name: "Done", exact: true })).toBeDisabled();
     await page.getByRole("button", { name: "Log out" }).click();
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome back.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome back, explorer.");
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login$/);
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill("Test-password-42!");
+    await page.getByRole("button", { name: "Enter the realm", exact: true }).click();
+    await expect(page).toHaveURL(/\/arena$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Knowledge Arena");
   } finally { await outsider.dispose(); }
 });

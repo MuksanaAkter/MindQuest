@@ -6,7 +6,9 @@ Next.js runs the UI, API entrypoints, and backend logic in one application.
 
 ## Knowledge Arena
 
-Open `/` or `/arena` for the playable fantasy learning game. Knowledge Arena has
+`/` is the public MindQuest landing page; `/login` and `/signup` share its fantasy theme.
+Successful login/signup opens `/arena`. Guest play is explicitly available from
+the landing and auth pages. Open `/arena` for the playable fantasy learning game. Knowledge Arena has
 72 authored questions across science, world geography, and history/culture, three
 difficulties, five-question shuffled rounds, timed/relaxed play, streak bonuses,
 explanations, results review, recent personal bests, resume, and replay. A daily

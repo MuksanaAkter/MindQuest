@@ -13,7 +13,10 @@
     "./complete-quest": "./src/routes/complete-quest.ts",
     "./arena": "./src/routes/arena.ts",
     "./arena/contracts": "./src/games/shared/contracts.ts",
-    "./arena/scoring": "./src/games/shared/scoring.ts"
+    "./arena/scoring": "./src/games/shared/scoring.ts",
+    "./quizzes": "./src/routes/quizzes.ts",
+    "./quizzes/contracts": "./src/quizzes/contracts.ts",
+    "./quizzes/validation": "./src/quizzes/validation.ts"
   },
   "dependencies": {
     "@prisma/client": "^7.0.0",

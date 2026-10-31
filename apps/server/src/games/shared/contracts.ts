@@ -6,6 +6,7 @@ export type ArenaConfig = { category: Category; difficulty: Difficulty; timed: b
 export type PublicQuestion = { id: string; category: Exclude<Category, "mixed">; prompt: string; options: { id: string; text: string }[] };
 export type AnswerReview = { questionId: string; prompt: string; selected: string | null; answer: string; explanation: string; correct: boolean; points: number; timedOut: boolean };
 export type ArenaView = {
+  quiz?: { id: string; title: string; code: string; participantName: string; avatar: string };
   id: string; config: ArenaConfig; phase: "question" | "feedback" | "results";
   index: number; total: number; score: number; correctCount: number; streak: number;
   bestStreak: number; xpAwarded: number; authenticated: boolean;

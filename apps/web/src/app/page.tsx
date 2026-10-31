@@ -1,2 +1,2 @@
-import { Arena } from "@/features/arena/arena";
-export default function Home() { return <Arena />; }
+import { Landing } from "@/features/public/landing";
+export default function Home() { return <Landing />; }

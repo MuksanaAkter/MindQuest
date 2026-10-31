@@ -21,6 +21,7 @@ model User {
   progress      Progress?
   gameAttempts  GameAttempt[]
   gameRewards   GameReward[]
+  quizzes       Quiz[]
 }
 
 model Session {
@@ -95,6 +96,10 @@ enum Difficulty {
 model GameAttempt {
   id            String    @id @default(cuid())
   ownerKey      String
+  quizId        String?
+  quiz          Quiz?     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  participantName String?
+  participantAvatar String?
   userId        String?
   user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   mode          String    @default("knowledge")
@@ -121,4 +126,18 @@ model GameReward {
   xp        Int
   createdAt DateTime    @default(now())
   @@index([userId, createdAt])
+}
+
+model Quiz {
+  id        String        @id @default(cuid())
+  creatorId String
+  creator   User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title     String
+  code      String        @unique
+  questions Json
+  timed     Boolean       @default(false)
+  published Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  attempts  GameAttempt[]
+  @@index([creatorId, createdAt])
 }

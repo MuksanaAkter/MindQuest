@@ -2,38 +2,43 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { z } from "zod";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { publicCopy as c } from "@/features/public/copy";
 import { authClient } from "@/lib/auth-client";
 const subscribe = () => () => {};
 const credentials = z.object({ email: z.email(), password: z.string().min(8).max(128) });
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const signup = mode === "signup";
   const hydrated = useSyncExternalStore(subscribe, () => true, () => false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
     const data = new FormData(event.currentTarget);
     const parsed = credentials.safeParse({ email: data.get("email"), password: data.get("password") });
-    if (!parsed.success) { setError("Enter a valid email and a password of 8–128 characters."); return; }
+    if (!parsed.success) { setError(c.invalidCredentials); return; }
     const name = String(data.get("name") ?? "").trim();
-    if (signup && (name.length < 2 || name.length > 80)) { setError("Your name must be 2–80 characters."); return; }
+    if (signup && (name.length < 2 || name.length > 80)) { setError(c.invalidName); return; }
     setPending(true);
     try {
       const result = signup ? await authClient.signUp.email({ ...parsed.data, name }) : await authClient.signIn.email(parsed.data);
-      if (result.error) { setError(result.error.message ?? "Unable to sign in. Please try again."); return; }
+      if (result.error) { setError(result.error.message ?? c.failed); return; }
       // A fresh document clears session-bound client caches after authentication.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/dashboard");
-    } catch { setError("Unable to connect. Please try again shortly."); }
+      window.location.assign("/arena");
+    } catch { setError(c.unavailable); }
     finally { setPending(false); }
   }
-  const inputClass = "mt-2 w-full rounded-xl border border-[#d5ddcf] bg-white px-4 py-3";
-  return <form onSubmit={submit} className="mt-8 space-y-5">
-    {signup && <label className="block text-sm font-semibold">Your name<input name="name" required minLength={2} maxLength={80} autoComplete="name" className={inputClass} /></label>}
-    <label className="block text-sm font-semibold">Email<input name="email" type="email" required autoComplete="email" className={inputClass} /></label>
-    <label className="block text-sm font-semibold">Password<input name="password" type="password" required minLength={8} maxLength={128} autoComplete={signup ? "new-password" : "current-password"} className={inputClass} /></label>
-    {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-    <button disabled={pending || !hydrated} className="w-full rounded-xl bg-primary px-5 py-3 font-semibold text-white disabled:opacity-60">{pending ? "Please wait…" : signup ? "Create account" : "Log in"}</button>
-    <p className="text-center text-sm text-[#6b786c]">{signup ? "Already an explorer?" : "New here?"} <Link href={signup ? "/login" : "/signup"} className="font-semibold text-primary underline">{signup ? "Log in" : "Create an account"}</Link></p>
+  return <form onSubmit={submit} className="world-auth-form">
+    {signup && <label className="world-auth-label">{c.name}<input name="name" required minLength={2} maxLength={80} autoComplete="name" className="world-auth-input" /></label>}
+    <label className="world-auth-label">{c.email}<input name="email" type="email" required autoComplete="email" className="world-auth-input" /></label>
+    <label className="world-auth-label" htmlFor="auth-password">{c.password}</label><div className="auth-password-wrap"><input id="auth-password" name="password" type={showPassword ? "text" : "password"} required minLength={8} maxLength={128} autoComplete={signup ? "new-password" : "current-password"} className="world-auth-input" /><button type="button" className="auth-password-toggle" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>
+    {signup && <p className="auth-hint">{c.passwordHint}</p>}
+    {error && <p role="alert" className="auth-error">{error}</p>}
+    <button disabled={pending || !hydrated} className="world-button">{pending ? c.pending : signup ? c.signupButton : c.loginButton}<ArrowRight size={15} /></button>
+    <p className="auth-switch">{signup ? c.existing : c.new}<Link href={signup ? "/login" : "/signup"}>{signup ? c.login : c.create}</Link></p>
+    <Link href="/arena" className="auth-guest-link">{c.guest}<ArrowRight size={12} /></Link>
+    <p className="auth-hint text-center !mt-3">{c.guestHint}</p>
   </form>;
 }

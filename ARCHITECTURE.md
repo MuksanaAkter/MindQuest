@@ -48,3 +48,9 @@ an honest retry state, never local fabricated rewards. The local development DB 
 ignored under `.local/`; production uses the configured PostgreSQL URL. Guest
 history is tied to this browser cookie and is not transferred on signup. Account XP
 is for learning engagement, not a tamper-proof examination or competitive economy.
+
+## Public and player routes
+
+`/` introduces MindQuest to visitors. `/login` and `/signup` use the shared public
+fantasy shell. Successful authentication opens `/arena`, which also supports
+explicit guest play. `/dashboard` remains the protected personal quest area.
