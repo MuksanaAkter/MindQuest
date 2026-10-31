@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, type CSSProperties } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
-import { Check, Clock3, Sparkles } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Check, Clock3, Frown } from "lucide-react";
 import "../game-effects.css";
 
 export function QuestionTimer({ remaining, duration }: { remaining: number; duration: number }) {
@@ -12,7 +13,11 @@ export function QuestionTimer({ remaining, duration }: { remaining: number; dura
     <div><strong>{seconds}</strong><small>SECONDS</small></div>
   </div>;
 }
-export function AnswerCelebration({ correct, timedOut, points, streak }: { correct: boolean; timedOut: boolean; points: number; streak: number }) {
+function PartyConfetti() {
+  if (typeof document === "undefined") return null;
+  return createPortal(<div className="answer-confetti answer-confetti-party" aria-hidden="true">{Array.from({length:36},(_,i)=><i key={i} style={{"--angle":`${i*10}deg`,"--distance":`${75+(i%3)*24}px`,"--x":`${2+i*2.65}%`,"--drift":`${(i%5-2)*24}px`,"--delay":`${i%6*.09}s`,"--piece-color":["#cba4fa","#ffd377","#8fe2bc","#edabc7"][i%4]} as CSSProperties}/>)}</div>, document.body);
+}
+export function AnswerCelebration({ correct, timedOut, points, streak, mascot = "🦉" }: { correct: boolean; timedOut: boolean; points: number; streak: number; mascot?: string }) {
   const reduced = useReducedMotion();
   const count = useMotionValue(reduced ? points : 0);
   const display = useTransform(count, value => `+${Math.round(value)}`);
@@ -21,9 +26,14 @@ export function AnswerCelebration({ correct, timedOut, points, streak }: { corre
     return () => animation.stop();
   }, [count, points, reduced]);
   return <div className={`answer-celebration ${correct ? "celebration-correct" : "celebration-learning"}`} role="status" aria-label={correct ? `Correct! ${points} points earned${streak > 1 ? `, ${streak} answer streak` : ""}.` : timedOut ? "Time’s up. Let’s learn the answer." : "Keep going! Let’s learn the answer."}>
-    {correct && <div className="answer-confetti" aria-hidden="true">{Array.from({length:16},(_,i)=><i key={i} style={{"--angle":`${i*22.5}deg`,"--distance":`${75+(i%3)*24}px`,"--delay":`${i%4*.035}s`,"--piece-color":["#cba4fa","#ffd377","#8fe2bc","#edabc7"][i%4]} as CSSProperties}/>)}</div>}
-    <motion.div className="answer-effect-icon" initial={reduced ? false : { scale: .35, rotate: -18 }} animate={reduced ? { scale:1 } : correct ? { scale:[.35,1.18,1],rotate:[-18,7,0] } : { scale:1,rotate:[0,-9,9,-5,5,0] }} transition={{duration:.55}} aria-hidden="true">{correct ? <Check size={35} strokeWidth={3}/> : timedOut ? <Clock3 size={32}/> : <Sparkles size={32}/>}</motion.div>
-    <motion.div className="answer-score-pop" initial={reduced ? false : { opacity:0,y:14,scale:.8 }} animate={{opacity:1,y:0,scale:1}} transition={{delay:reduced ? 0 : .15,type:"spring",stiffness:250,damping:18}} aria-hidden="true"><motion.strong>{display}</motion.strong><span>points</span>{streak > 1 && <small>🔥 {streak} in a row!</small>}</motion.div>
+    {correct && <PartyConfetti/>}
+    <div className="celebration-character" aria-hidden="true">
+      <motion.span className="celebration-buddy" initial={reduced ? false : {scale:.3,y:18}} animate={reduced ? {scale:1,y:0} : correct ? {scale:[.3,1.15,1,1.08,1],y:[18,-12,0,-8,0],rotate:[-12,8,-5,5,0]} : {scale:[.7,1],y:[-4,6,2],rotate:[0,-8,-4]}} transition={{duration:correct ? 1.4 : .8}}>{correct ? mascot : timedOut ? "😥" : "😔"}</motion.span>
+      <motion.div className="answer-effect-icon" initial={reduced ? false : { scale: .35, rotate: -18 }} animate={reduced ? { scale:1 } : correct ? { scale:[.35,1.18,1],rotate:[-18,7,0] } : { scale:1,rotate:[0,-9,9,-5,5,0] }} transition={{duration:.55}}>{correct ? <Check size={35} strokeWidth={3}/> : timedOut ? <Clock3 size={32}/> : <Frown size={32}/>}</motion.div>
+      {!correct && <><span className="sad-cloud">☁</span><span className="sad-tear tear-one"/><span className="sad-tear tear-two"/></>}
+      {correct && <><span className="celebration-star star-one">✦</span><span className="celebration-star star-two">✧</span><span className="celebration-star star-three">⭐</span></>}
+    </div>
+    <motion.div className="answer-score-pop" initial={reduced ? false : { opacity:0,y:14,scale:.8 }} animate={{opacity:1,y:0,scale:1}} transition={{delay:reduced ? 0 : .15,type:"spring",stiffness:250,damping:18}} aria-hidden="true"><b className="celebration-cheer">{correct ? streak > 1 ? "You’re on a roll!" : "Woo-hoo! You did it!" : timedOut ? "Time slipped away…" : "Oops… not this one"}</b><motion.strong>{display}</motion.strong><span>points</span>{!correct && <small className="sad-encouragement">It’s okay. Let’s learn and try again.</small>}{streak > 1 && <small>🔥 {streak} in a row!</small>}</motion.div>
   </div>;
 }
 export function ResultCelebration() {

@@ -15,7 +15,8 @@ export function useGameAudio(enabled: boolean) {
   const enabledRef = useRef(enabled);
   const context = useRef<AudioContext | null>(null);
   const master = useRef<GainNode | null>(null);
-  const active = useRef(new Set<OscillatorNode>());
+  const active = useRef(new Set<OscillatorNode | AudioBufferSourceNode>());
+  const clapNoise = useRef<AudioBuffer | null>(null);
   const unlock = useCallback(() => {
     try {
       if (!context.current || context.current.state === "closed") {
@@ -43,12 +44,41 @@ export function useGameAudio(enabled: boolean) {
   }, [enabled, unlock]);
   useEffect(() => () => {
     if (context.current && context.current.state !== "closed") void context.current.close().catch(() => {});
-    context.current = null; master.current = null;
+    context.current = null; master.current = null; clapNoise.current = null;
   }, []);
   const play = useCallback((cue: GameCue) => {
     const audio = context.current;
-    if (!enabledRef.current || !audio || audio.state !== "running" || !master.current) return;
+    if (document.hidden || !enabledRef.current || !audio || audio.state !== "running" || !master.current) return;
     try {
+      if (cue === "correct" || cue === "complete") {
+        // Short, overlapping filtered noise bursts imitate hands clapping.
+        // Reuse one original noise buffer; every burst has its own envelope.
+        if (!clapNoise.current) {
+          const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * .19), audio.sampleRate);
+          const data = buffer.getChannelData(0);
+          let seed = 317;
+          for (let i = 0; i < data.length; i++) {
+            seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+            data[i] = seed / 2147483648 - 1;
+          }
+          clapNoise.current = buffer;
+        }
+        const claps = cue === "complete" ? 9 : 6;
+        for (let i = 0; i < claps; i++) {
+          const source = audio.createBufferSource(); const filter = audio.createBiquadFilter(); const gain = audio.createGain();
+          source.buffer = clapNoise.current; source.playbackRate.value = .94 + (i % 3) * .075;
+          filter.type = "highpass"; filter.frequency.value = 900; filter.Q.value = .65;
+          const at = audio.currentTime + .08 + i * .17 + (i % 2) * .025;
+          gain.gain.setValueAtTime(.001, at);
+          gain.gain.exponentialRampToValueAtTime(1.65, at + .004);
+          gain.gain.exponentialRampToValueAtTime(.45, at + .035);
+          gain.gain.exponentialRampToValueAtTime(.001, at + .17);
+          source.connect(filter); filter.connect(gain); gain.connect(master.current);
+          active.current.add(source);
+          source.onended = () => { active.current.delete(source); source.disconnect(); filter.disconnect(); gain.disconnect(); };
+          source.start(at); source.stop(at + .19);
+        }
+      }
       for (const [frequency, offset, duration] of notes[cue]) {
         const oscillator = audio.createOscillator(); const gain = audio.createGain();
         oscillator.type = cue === "tick" ? "sine" : "triangle";

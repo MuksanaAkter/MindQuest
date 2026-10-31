@@ -41,7 +41,7 @@ to trusted seeded library quizzes. Built-in five-question Arena practice retains
 
 - Creators sign in at `/login` or register at `/signup`, then use `/create`.
 - Publish a quiz with 1–20 questions, four distinct choices per question, correct
-  answers, optional explanations, and an optional 25-second timer per question.
+  answers, optional explanations, and an optional 15-second timer per question.
 - Each quiz gets an 8-character join code and a copyable homepage join link.
 - Participants select a published quiz or enter its code, then choose a name and
   one of five free avatars. No registration or login is required.
@@ -307,14 +307,20 @@ overflow, favicon responses, creator routes, gameplay and completed results.
 
 ## Quiz timer, answer animations and sound
 
-Ready library quizzes now use a 25-second server-validated timer for each new
+Ready library quizzes now use a 15-second server-validated timer for each new
 attempt. Creator quizzes retain their timed/relaxed setting. Refresh an existing
 library with `npm run db:seed -- --refresh-library` to enable its timers; existing
 attempts keep their original settings and progress.
 
-The timer ring pulses and ticks during the final five seconds. Correct answers
+The timer ticks every second and its ring pulses during the final five seconds. Correct answers
 show a drawn checkmark, confetti, an animated points counter and an original
-ascending chime; incorrect answers and timeouts have gentler, distinct effects.
+ascending chime with short clap-style applause; incorrect answers and timeouts have gentler, distinct tones, a sad character and
+muted pink/lilac feedback.
 Results include a short celebration. Sound starts after a browser interaction,
 can be muted in the game header, and stops immediately on mute. Reduced-motion
 preferences disable confetti, pulse and bounce effects.
+
+Quiz play now uses bright pastel answer tiles, larger touch targets and a lighter
+question card. A correct answer celebrates with the selected avatar, a cheerful
+message, rising points and a three-second screen-wide confetti shower. All timed
+questions use the same 15-second server deadline across difficulty levels.

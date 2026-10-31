@@ -12,10 +12,14 @@ test("timer, correct/timeout animations, real sound scheduling and mute work wit
   await page.addInitScript(()=>{
     const frequencies:number[]=[];
     Object.defineProperty(window,"__gameFrequencies",{value:frequencies});
+    const claps:number[]=[];Object.defineProperty(window,"__gameClaps",{value:claps});
+    const createBuffer=AudioContext.prototype.createBufferSource;
+    AudioContext.prototype.createBufferSource=function(){const source=createBuffer.call(this);const start=source.start.bind(source);source.start=(at=0,offset=0,duration?:number)=>{claps.push(at);if(duration===undefined)start(at,offset);else start(at,offset,duration);};return source;};
     const create=AudioContext.prototype.createOscillator;
     AudioContext.prototype.createOscillator=function(){const oscillator=create.call(this);const start=oscillator.start.bind(oscillator);oscillator.start=(at=0)=>{frequencies.push(oscillator.frequency.value);start(at);};return oscillator;};
   });
   const sounds=()=>page.evaluate(()=>Reflect.get(window,"__gameFrequencies") as number[]);
+  const applause=()=>page.evaluate(()=>Reflect.get(window,"__gameClaps") as number[]);
   try {
     const signup=await page.request.post("/api/auth/sign-up/email",{data:{name:"Effects Creator",email:`effects-${Date.now()}@example.com`,password:"Test-password-42!"},headers:{Origin:"http://localhost:3000"}});
     expect(signup.ok()).toBe(true);creatorId=(await signup.json()).user.id;
@@ -27,18 +31,24 @@ test("timer, correct/timeout animations, real sound scheduling and mute work wit
     expect(created.ok()).toBe(true);const quiz=await created.json();
     const joined=await page.request.post("/api/quizzes/join",{data:{code:quiz.code,name:"Effects Explorer",avatar:"fox"}});
     const round:ArenaView=(await joined.json()).attempt;
+    expect(new Date(round.deadline!).getTime()-new Date(round.serverTime).getTime()).toBeGreaterThan(14000);
+    expect(new Date(round.deadline!).getTime()-new Date(round.serverTime).getTime()).toBeLessThanOrEqual(15000);
     const guest=(await page.context().cookies()).find(c=>c.name==="mq_guest")!;ownerKey=`guest:${guest.value}`;
     await page.goto(`/play/${round.id}`);await expect(page.getByRole("timer")).toBeVisible();
+    await page.getByRole("heading",{name:"What is 2 + 3?",exact:true}).click();
+    await expect.poll(async()=>(await sounds()).filter(frequency=>frequency===880).length).toBeGreaterThanOrEqual(2);
+    await expect(page.getByRole("timer")).not.toHaveClass(/is-urgent/);
     await page.getByRole("button",{name:/^[ABCD] 5$/}).click();
     await page.getByRole("button",{name:"Lock in answer",exact:true}).click();
     await expect(page.getByRole("heading",{name:"A brilliant discovery!"})).toBeVisible();
     await expect(page.getByRole("status",{name:/Correct! 100 points earned/})).toBeVisible();
-    await expect(page.locator(".answer-confetti i")).toHaveCount(16);
+    await expect(page.locator(".answer-confetti i")).toHaveCount(36);
     await expect.poll(sounds).toContain(1046.5);
+    await expect.poll(async()=>(await applause()).length).toBe(6);
     const saved:ArenaView=await(await page.request.get(`/api/arena/${round.id}`)).json();expect(saved.reviews).toHaveLength(1);
     await page.getByRole("button",{name:"Next discovery",exact:true}).click();await expect(page.getByRole("timer")).toBeVisible();
     // Move only this disposable attempt near its real server deadline; no fake browser clock.
-    await pool.query('UPDATE "GameAttempt" SET state=jsonb_set(state,\'{questionStartedAt}\',to_jsonb($2::text)) WHERE id=$1',[round.id,new Date(Date.now()-21000).toISOString()]);
+    await pool.query('UPDATE "GameAttempt" SET state=jsonb_set(state,\'{questionStartedAt}\',to_jsonb($2::text)) WHERE id=$1',[round.id,new Date(Date.now()-11000).toISOString()]);
     await page.reload();await page.getByRole("heading",{name:"Which ocean is the biggest?",exact:true}).click();
     await expect(page.getByRole("timer")).toHaveClass(/is-urgent/);
     await expect.poll(sounds).toContain(880);
@@ -48,11 +58,13 @@ test("timer, correct/timeout animations, real sound scheduling and mute work wit
     await expect.poll(async()=>(await sounds()).some(frequency=>Math.abs(frequency-261.63)<.01)).toBe(true);
     await page.getByRole("button",{name:"Next discovery",exact:true}).click();
     await page.getByRole("button",{name:"Mute game sounds",exact:true}).click();
-    const before=(await sounds()).length;
+    const before=(await sounds()).length;const clapsBefore=(await applause()).length;
     await page.getByRole("button",{name:/^[ABCD] Venus$/}).click();await page.getByRole("button",{name:"Lock in answer",exact:true}).click();
     await expect(page.getByRole("heading",{name:"A new thing learned."})).toBeVisible();
-    expect((await sounds()).length).toBe(before);
+    expect((await sounds()).length).toBe(before);expect((await applause()).length).toBe(clapsBefore);
     await expect(page.locator(".celebration-learning")).toBeVisible();
+    await expect(page.locator(".celebration-learning .celebration-buddy")).toHaveText("😔");
+    await expect(page.getByText("Oops… not this one",{exact:true})).toBeVisible();
     await page.getByRole("button",{name:"Reveal my results",exact:true}).click();
     await expect(page.getByText("1/3",{exact:true})).toBeVisible();
     await expect(page.locator(".result-celebration i")).toHaveCount(24);

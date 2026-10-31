@@ -1,6 +1,6 @@
 import type { Difficulty } from "./contracts";
 export const ROUND_LENGTH = 5;
-export const QUESTION_SECONDS = { EASY: 25, MEDIUM: 20, HARD: 15 } as const;
+export const QUESTION_SECONDS = { EASY: 15, MEDIUM: 15, HARD: 15 } as const;
 export function answerPoints(correct: boolean, streak: number, difficulty: Difficulty): number {
   if (!correct) return 0;
   const base = { EASY: 100, MEDIUM: 150, HARD: 200 }[difficulty];
