@@ -1,0 +1,6 @@
+import type { NextConfig } from "next";
+const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  transpilePackages: ["@mindquest/server"],
+};
+export default nextConfig;

@@ -1,0 +1,45 @@
+{
+  "name": "mindquest",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @mindquest/web",
+    "build": "prisma generate && npm run build --workspace @mindquest/web",
+    "start": "npm run start --workspace @mindquest/web",
+    "lint": "eslint .",
+    "typecheck": "prisma generate && tsc --noEmit -p apps/server && tsc --noEmit -p apps/web && tsc --noEmit -p tsconfig.json",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/pg": "^8.15.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "prisma": "^7.0.0",
+    "jest": "^30.0.0",
+    "@types/jest": "^30.0.0",
+    "jest-environment-jsdom": "^30.0.0",
+    "@playwright/test": "^1.56.0",
+    "dotenv": "^17.0.0"
+  },
+  "workspaces": [
+    "apps/web",
+    "apps/server"
+  ]
+}

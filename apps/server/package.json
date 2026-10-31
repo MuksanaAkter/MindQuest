@@ -1,0 +1,26 @@
+{
+  "name": "@mindquest/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./auth": "./src/auth.ts",
+    "./db": "./src/db.ts",
+    "./session": "./src/session.ts",
+    "./game": "./src/game.ts",
+    "./validation": "./src/validations/quest.ts",
+    "./quests": "./src/routes/quests.ts",
+    "./complete-quest": "./src/routes/complete-quest.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.0.0",
+    "@prisma/adapter-pg": "^7.0.0",
+    "pg": "^8.16.0",
+    "better-auth": "^1.4.0",
+    "zod": "^4.0.0",
+    "server-only": "^0.0.1"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0"
+  }
+}
