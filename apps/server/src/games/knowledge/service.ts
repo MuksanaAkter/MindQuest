@@ -4,11 +4,13 @@ import { getDb } from "../../db";
 import type { GameAttempt, Prisma } from "../../generated/prisma/client";
 import type { AnswerReview, ArenaConfig, ArenaOverview, ArenaView } from "../shared/contracts";
 import { answerPoints, QUESTION_SECONDS, resultRank, roundXp } from "../shared/scoring";
+import { grantLibraryReward } from "../../quizzes/player";
+import type { PlayerRewardSummary } from "../../quizzes/contracts";
 import { QUESTIONS } from "./questions";
 import { seededRandom, selectQuestions, shuffled } from "./selection";
 export type Owner = { key: string; userId: string | null; name: string; guestKey?: string };
 type StoredQuestion = { snapshot?: { id: string; category: "science"; prompt: string; options: string[]; explanation: string }; id: string; choices: { id: string; option: number }[] };
-type AttemptState = { phase: ArenaView["phase"]; index: number; questions: StoredQuestion[]; answers: AnswerReview[]; questionStartedAt: string; streak: number; quiz?: { title: string; code: string } };
+type AttemptState = { phase: ArenaView["phase"]; index: number; questions: StoredQuestion[]; answers: AnswerReview[]; questionStartedAt: string; streak: number; playerReward?: PlayerRewardSummary; quiz?: { title: string; code: string; builtIn?: boolean } };
 export class ArenaError extends Error { constructor(public status: number, message: string) { super(message); } }
 const asJson = (value: object) => value as unknown as Prisma.InputJsonValue;
 const stateOf = (attempt: GameAttempt) => attempt.state as unknown as AttemptState;
@@ -22,7 +24,8 @@ export function publicView(attempt: GameAttempt): ArenaView {
   const state = stateOf(attempt); const config = configOf(attempt);
   const stored = state.questions[state.index]; const q = stored ? stored.snapshot ?? questionFor(stored.id) : null;
   return {
-    ...(attempt.quizId && state.quiz ? { quiz: { id: attempt.quizId, title: state.quiz.title, code: state.quiz.code, participantName: attempt.participantName ?? "Participant", avatar: attempt.participantAvatar ?? "owl" } } : {}),
+    ...(attempt.quizId && state.quiz ? { quiz: { library: state.quiz.builtIn ?? false, id: attempt.quizId, title: state.quiz.title, code: state.quiz.code, participantName: attempt.participantName ?? "Participant", avatar: attempt.participantAvatar ?? "owl" } } : {}),
+    ...(state.playerReward ? { playerReward: state.playerReward } : {}),
     id: attempt.id, config, phase: state.phase, index: state.index, total: state.questions.length,
     score: attempt.score, correctCount: attempt.correctCount, streak: state.streak,
     bestStreak: attempt.bestStreak, xpAwarded: attempt.xpAwarded, authenticated: !!attempt.userId,
@@ -99,6 +102,10 @@ export async function actOnRound(owner: Owner, id: string, action: { action: "an
         xpAwarded = xp;
         await tx.progress.upsert({ where: { userId: owner.userId }, create: { userId: owner.userId, totalXp: xp }, update: { totalXp: { increment: xp } } });
       }
+    }
+    if (completed && attempt.quizId) {
+      const libraryQuiz = await tx.quiz.findUnique({ where: { id: attempt.quizId }, select: { builtIn: true } });
+      if (libraryQuiz?.builtIn) state.playerReward = await grantLibraryReward(tx, attempt.ownerKey, attempt.quizId, correctCount, state.questions.length);
     }
     const updated = await tx.gameAttempt.update({ where: { id }, data: { state: asJson(state), score: attempt.score + points, correctCount, bestStreak: Math.max(attempt.bestStreak, state.streak), completedAt: completed ? new Date() : null, xpAwarded } });
     return publicView(updated);

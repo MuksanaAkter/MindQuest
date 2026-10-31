@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+// Isolate parallel test visitors from the production signup IP rate limit.
+test.use({ extraHTTPHeaders: { "x-forwarded-for": "192.0.2.12" } });
 test("account owns its quests and completion awards XP once", async ({ page, playwright }) => {
   test.skip(process.env.RUN_DB_E2E !== "1", "Requires a migrated disposable PostgreSQL database and auth environment.");
   const email = `explorer-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
@@ -8,7 +10,7 @@ test("account owns its quests and completion awards XP once", async ({ page, pla
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill("Test-password-42!");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/arena$/);
+  await expect(page).toHaveURL(/\/create$/);
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Keep growing, Test Explorer.");
   const response = await page.request.post("/api/quests", { data: { title: "Read ten pages", difficulty: "EASY", userId: "forged-owner", xp: 9999 } });
@@ -34,8 +36,8 @@ test("account owns its quests and completion awards XP once", async ({ page, pla
     await expect(page).toHaveURL(/\/login$/);
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill("Test-password-42!");
-    await page.getByRole("button", { name: "Enter the realm", exact: true }).click();
-    await expect(page).toHaveURL(/\/arena$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Knowledge Arena");
+    await page.getByRole("button", { name: "Open creator studio", exact: true }).click();
+    await expect(page).toHaveURL(/\/create$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Creator studio");
   } finally { await outsider.dispose(); }
 });

@@ -22,17 +22,18 @@ test("health endpoint responds", async ({ request }) => {
 test("public landing leads to matching auth pages and guest Arena", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Your mind holds");
-  await page.getByRole("link", { name: "Start your adventure", exact: true }).first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Little questions.");
+  await page.getByRole("link", { name: "Creator login", exact: true }).first().click();
+  await page.getByRole("link", { name: "Create an account", exact: true }).click();
   await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your adventure starts here.");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.getByLabel("Password", { exact: true }).fill("Example-password-42!");
   await page.getByRole("button", { name: "Show password", exact: true }).click();
   await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "text");
-  await page.getByRole("link", { name: "Log in", exact: true }).click();
+  await page.getByRole("link", { name: "Creator login", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome back, explorer.");
-  await page.getByRole("link", { name: "Explore as a guest", exact: true }).click();
-  await expect(page).toHaveURL(/\/arena$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Knowledge Arena");
+  await page.getByRole("link", { name: "Join a quiz without an account", exact: true }).click();
+  await expect(page).toHaveURL(/\/#join-quiz$/);
+  await expect(page.getByRole("heading", { name: "Ready to play?" })).toBeVisible();
 });

@@ -16,7 +16,8 @@
     "./arena/scoring": "./src/games/shared/scoring.ts",
     "./quizzes": "./src/routes/quizzes.ts",
     "./quizzes/contracts": "./src/quizzes/contracts.ts",
-    "./quizzes/validation": "./src/quizzes/validation.ts"
+    "./quizzes/validation": "./src/quizzes/validation.ts",
+    "./quizzes/reward-rules": "./src/quizzes/reward-rules.ts"
   },
   "dependencies": {
     "@prisma/client": "^7.0.0",

@@ -4,6 +4,10 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, ArrowLeft, BookOpen, Brain, Check, ChevronRight, Clock3, Compass, Crown, Flame, Leaf, LockKeyhole, ShieldCheck, Sparkles, Swords, Volume2, VolumeX, WandSparkles } from "lucide-react";
 import type { ArenaConfig, ArenaOverview, ArenaView, Category } from "@mindquest/server/arena/contracts";
+import { AVATAR_EMOJI, type Avatar } from "@mindquest/server/quizzes/contracts";
+import { quizCopy as qc } from "@/features/quizzes/copy";
+import "@/features/quizzes/quiz.css";
+import { useLibrary } from "@/features/quizzes/library-store";
 import { useArenaUi } from "./store";
 import { arenaCopy as c } from "./copy";
 import { ArenaLobby } from "./components/arena-lobby";
@@ -30,8 +34,11 @@ function playFeedback(correct: boolean) {
 function Guide({ dialogRef }: { dialogRef: React.RefObject<HTMLDialogElement | null> }) {
   return <dialog ref={dialogRef} className="arena-dialog" aria-labelledby="arena-guide-title" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}><h2 id="arena-guide-title" className="serif">{c.guideTitle}</h2><ol>{c.guideSteps.map((step) => <li key={step}>{step}</li>)}</ol><button className="arena-button" onClick={() => dialogRef.current?.close()}>{c.close}<ArrowRight size={14} /></button></dialog>;
 }
-export function Arena() {
+export function Arena({ attemptId }: { attemptId?: string }) {
   const { config, setConfig, sound, toggleSound } = useArenaUi();
+  const libraryPlayer = useLibrary((state) => state.player);
+  const loadLibrary = useLibrary((state) => state.load);
+  useEffect(() => { if (attemptId) void loadLibrary(); }, [attemptId, loadLibrary]);
   const [overview, setOverview] = useState<ArenaOverview | null>(null);
   const [round, setRound] = useState<ArenaView | null>(null);
   const [error, setError] = useState(""); const [pending, setPending] = useState(false);
@@ -53,6 +60,10 @@ export function Arena() {
     return () => { cancelled = true; };
   }, []);
   const setView = useCallback((view: ArenaView) => { setRound(view); setChoice(null); setError(""); expiredFor.current = null; if (view.phase === "results") void loadOverview(); }, [loadOverview]);
+  useEffect(() => {
+    if (!attemptId) return;
+    api<ArenaView>(`/api/arena/${attemptId}`).then(setView).catch((e: unknown) => setError(e instanceof Error ? e.message : c.networkError));
+  }, [attemptId, setView]);
   async function start(daily = false, requested: ArenaConfig = config) {
     if (inFlight.current) return; inFlight.current = true; setPending(true); setError("");
     try { setView(await api<ArenaView>("/api/arena", { ...requested, daily })); window.scrollTo({ top: 0, behavior: "instant" }); }
@@ -81,7 +92,10 @@ export function Arena() {
     catch (e) { setError(e instanceof Error ? e.message : c.networkError); }
     finally { inFlight.current = false; setPending(false); }
   }
-  function lobby() { setLoading(true); setRound(null); setChoice(null); setError(""); void loadOverview(); }
+  function lobby() { if (attemptId) {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/"); return;
+  } setLoading(true); setRound(null); setChoice(null); setError(""); void loadOverview(); }
   useEffect(() => {
     if (!round?.deadline || round.phase !== "question") return;
     const duration = new Date(round.deadline).getTime() - new Date(round.serverTime).getTime();
@@ -119,16 +133,16 @@ export function Arena() {
       <Link href="/" className="arena-brand"><span className="arena-brand-mark"><BookOpen size={23} strokeWidth={1.4} /></span>{c.brand}</Link><p className="arena-tagline">{c.tagline}</p>
       <p className="arena-nav-label">{c.adventure}</p>
       <button className="arena-nav-link active" onClick={lobby}><Swords size={17} />{c.title}<ChevronRight size={12} className="ml-auto" /></button>
-      <Link href="/dashboard" className="arena-nav-link"><Compass size={17} />{c.quests}</Link>
+      <Link href="/create" className="arena-nav-link"><Compass size={17} />{qc.create}</Link>
       <button className="arena-nav-link" onClick={showGuide}><BookOpen size={17} />{c.help}</button>
       <div className="arena-future"><p className="arena-nav-label">{c.other}</p>{c.future.map((name, i) => { const Icon = [WandSparkles, Brain, Leaf][i]; return <div className="arena-future-mode" key={name} title={c.futureHint}><Icon size={16} /><span>{name}</span><LockKeyhole size={11} /></div>; })}</div>
       <div className="arena-sidebar-bottom"><div className="arena-guide-card"><Sparkles size={20} color="#b598d7" /><p>{c.guideQuote}</p><button onClick={showGuide}>{c.help}<ArrowUpRight size={12} /></button></div><div className="arena-guest"><span className="arena-avatar"><Crown size={17} /></span><div><strong>{overview?.authenticated ? overview.name : c.guest}</strong><Link href={overview?.authenticated ? "/dashboard" : "/login"}>{overview?.authenticated ? `${overview.totalXp} XP · ${c.profile}` : c.legacyLink}</Link></div></div></div>
     </aside>
-    <div className="arena-content"><header className="arena-topbar"><div className="arena-breadcrumb"><span>{c.realm}</span><ChevronRight size={11} /><span>{c.realmName}</span></div><div className="arena-top-actions"><span className="xp-tag"><Sparkles size={14} />{overview?.totalXp ?? 0} XP</span><button className="arena-icon-button" aria-label={c.help} onClick={showGuide}><BookOpen size={15} /></button><button className="arena-icon-button" aria-label={sound ? c.soundOn : c.soundOff} aria-pressed={sound} onClick={toggleSound}>{sound ? <Volume2 size={15} /> : <VolumeX size={15} />}</button><Link href={overview?.authenticated ? "/dashboard" : "/login"} className="arena-avatar" aria-label={overview?.authenticated ? c.dashboard : c.signIn}><Crown size={16} /></Link></div></header>
+    <div className="arena-content"><header className="arena-topbar"><div className="arena-breadcrumb"><span>{c.realm}</span><ChevronRight size={11} /><span>{round?.quiz?.title ?? c.realmName}</span></div><div className="arena-top-actions"><span className="xp-tag"><Sparkles size={14} />{round?.quiz?.library ? round.playerReward?.totalXp ?? libraryPlayer?.totalXp ?? 0 : overview?.totalXp ?? 0} XP</span><button className="arena-icon-button" aria-label={c.help} onClick={showGuide}><BookOpen size={15} /></button><button className="arena-icon-button" aria-label={sound ? c.soundOn : c.soundOff} aria-pressed={sound} onClick={toggleSound}>{sound ? <Volume2 size={15} /> : <VolumeX size={15} />}</button><Link href={overview?.authenticated ? "/dashboard" : "/login"} className="arena-avatar" aria-label={overview?.authenticated ? c.dashboard : c.signIn}><Crown size={16} /></Link></div></header>
     <main className="arena-main">
-      {error && <div role="alert" className="arena-alert"><span>{error}</span><button className="arena-button secondary" disabled={pending} onClick={() => round ? resume(round.id) : void loadOverview()}>{round ? c.recover : c.retry}</button></div>}
-      {!round ? <ArenaLobby overview={overview} config={config} loading={loading} pending={pending} setConfig={setConfig} start={start} resume={resume} /> : <section className="arena-round" aria-label="Knowledge Arena gameplay"><h1 className="sr-only">{c.title}</h1>
-        <div className="arena-round-top"><button className="arena-back" disabled={pending} onClick={lobby}><ArrowLeft size={13} />{c.lobby}</button><span className="arena-pill"><CategoryIcon size={12} />{c.categories[round.config.category].short} · {c.difficulties[round.config.difficulty].name}</span></div>
+      {error && <div role="alert" className="arena-alert"><span>{error}</span><button className="arena-button secondary" disabled={pending} onClick={() => round ? resume(round.id) : attemptId ? resume(attemptId) : void loadOverview()}>{round ? c.recover : c.retry}</button></div>}
+      {!round && attemptId ? <div className="arena-loading">{error ? <Link href="/">Back home</Link> : "Loading your quiz…"}</div> : !round ? <ArenaLobby overview={overview} config={config} loading={loading} pending={pending} setConfig={setConfig} start={start} resume={resume} /> : <section className="arena-round" aria-label="Knowledge Arena gameplay"><h1 className="sr-only">{round.quiz?.title ?? c.title}</h1>{round.quiz && <div className="participant-banner"><span aria-hidden="true">{AVATAR_EMOJI[round.quiz.avatar as Avatar]}</span><div><strong>{round.quiz.title}</strong><small>{round.quiz.participantName} · {qc.player}</small></div></div>}
+        <div className="arena-round-top"><button className="arena-back" disabled={pending} onClick={lobby}><ArrowLeft size={13} />{c.lobby}</button><span className="arena-pill"><CategoryIcon size={12} />{round.quiz ? `${round.total} questions` : `${c.categories[round.config.category].short} · ${c.difficulties[round.config.difficulty].name}`}</span></div>
         {round.phase === "results" ? <ArenaResults round={round} heading={heading} pending={pending} start={start} lobby={lobby} /> : <>
           <div className="arena-round-info"><span><Sparkles size={14} />{round.score} {c.points}</span><span className={round.streak > 1 ? "text-[#dfb574]" : ""}><Flame size={14} />{round.streak} {c.streak.toLowerCase()}</span></div>
           <div className="arena-progress-track" aria-label={`Question ${round.index + 1} of ${round.total}`}>{Array.from({ length: round.total }, (_, i) => <span key={i} className={round.reviews[i] ? round.reviews[i].correct ? "answered" : "missed" : i === round.index ? "current" : ""} />)}</div>

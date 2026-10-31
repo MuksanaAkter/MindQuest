@@ -28,7 +28,8 @@ export async function guarded(run: () => Promise<unknown>) {
   try { return Response.json(await run(), { headers: { "Cache-Control": "no-store" } }); }
   catch (error) {
     if (error instanceof ArenaError) return Response.json({ error: error.message }, { status: error.status });
-    if (error instanceof z.ZodError || error instanceof SyntaxError) return Response.json({ error: "Invalid arena request." }, { status: 400 });
+    if (error instanceof z.ZodError) return Response.json({ error: error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
+    if (error instanceof SyntaxError) return Response.json({ error: "Invalid request JSON." }, { status: 400 });
     console.error("Arena request failed", error instanceof Error ? error.name : "Unknown error");
     return Response.json({ error: "The arena is temporarily unavailable. Please try again shortly." }, { status: 503 });
   }

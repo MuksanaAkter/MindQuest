@@ -114,6 +114,7 @@ model GameAttempt {
   abandonedAt   DateTime?
   reward        GameReward?
   @@index([ownerKey, startedAt])
+  @@index([quizId, startedAt])
 }
 
 model GameReward {
@@ -133,6 +134,13 @@ model Quiz {
   creatorId String
   creator   User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   title     String
+  builtIn   Boolean       @default(false)
+  seedKey   String?       @unique
+  topic     String        @default("Community")
+  icon      String        @default("✨")
+  description String      @default("")
+  difficultyLabel String  @default("Explorer")
+  progress  PlayerQuizProgress[]
   code      String        @unique
   questions Json
   timed     Boolean       @default(false)
@@ -140,4 +148,31 @@ model Quiz {
   createdAt DateTime      @default(now())
   attempts  GameAttempt[]
   @@index([creatorId, createdAt])
+}
+
+model PlayerProfile {
+  id              String   @id @default(cuid())
+  ownerKey        String   @unique
+  name            String   @default("Explorer")
+  avatar          String   @default("owl")
+  totalXp         Int      @default(0)
+  coins           Int      @default(0)
+  unlockedAvatars String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  progress        PlayerQuizProgress[]
+}
+
+model PlayerQuizProgress {
+  id          String   @id @default(cuid())
+  ownerKey    String
+  player      PlayerProfile @relation(fields: [ownerKey], references: [ownerKey], onDelete: Cascade)
+  quizId      String
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  bestCorrect Int      @default(0)
+  xpEarned    Int      @default(0)
+  coinsEarned Int      @default(0)
+  mastered    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+  @@unique([ownerKey, quizId])
 }

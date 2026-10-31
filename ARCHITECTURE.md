@@ -52,5 +52,39 @@ is for learning engagement, not a tamper-proof examination or competitive econom
 ## Public and player routes
 
 `/` introduces MindQuest to visitors. `/login` and `/signup` use the shared public
-fantasy shell. Successful authentication opens `/arena`, which also supports
-explicit guest play. `/dashboard` remains the protected personal quest area.
+fantasy shell. Successful authentication opens the protected `/create` studio. Participants join
+from `/` using a quiz code, nickname, and avatar, then play at `/play/:id` without
+authentication. `/arena` remains optional built-in practice. `/dashboard` remains the protected personal quest area.
+
+## Creator-authored quizzes
+
+`Quiz` stores an authenticated creator, immutable authored question JSON, a unique
+join code, and its open/closed state. Public listing projections include only
+metadata. Creator APIs always scope reads and mutations to the session user.
+
+Joining uses only an HttpOnly browser identity and validated name/avatar. Questions
+are snapshotted privately into `GameAttempt.state`; its nullable Quiz relation and
+participant identity distinguish custom quizzes from the built-in bank. The same
+question projection, row locking, deadlines, feedback, and saved result lifecycle
+are reused. Custom attempts never issue account XP or reward ledger entries.
+Authenticated creators can also participate using the independent guest cookie.
+Participant ownership is checked against the session key or current guest cookie;
+knowing a result URL alone grants no access. Guest names are shown only to their
+quiz creator and within the participant's own attempt.
+
+## Seeded learning library and browser player progression
+
+A trusted local seed installs 50 `Quiz` rows marked `builtIn`, with 15 immutable
+question snapshots each. Public projections contain topic/icon/difficulty metadata,
+never answers. Creators cannot mark their own quizzes as built-in through APIs.
+The seed is transactional and idempotent by unique `seedKey`; a second run inserts zero.
+
+`PlayerProfile` is keyed by the HttpOnly guest cookie, independent of creator login.
+`PlayerQuizProgress` has a unique owner/quiz key and records best answers and total
+rewards earned. At completion, the existing attempt row lock and an advisory player
+lock serialise attempts, including different quizzes. Only increases to a personal
+best add XP/coins. A first score strictly above 90% grants mastery and one previously
+locked avatar. The result stores a reward snapshot; rereading it grants nothing.
+Avatar equipment is checked server-side against base and persisted unlocked avatars.
+Levels derive from XP at 300 XP per level. Guest progress is browser-scoped rather
+than nickname-authenticated, and has no cash, purchase, or competitive value.

@@ -31,3 +31,24 @@ Memory Temple and Code Dungeon are next consumers of the shared attempt/reward
 architecture. Coins, leaderboards, inventory, character selection, admin content
 tools, and deployment remain future work. The current question catalogue has 72
 authored entries and should grow with reviewed, versioned question content.
+
+## Creator and anonymous participant flow
+
+- [x] Protected creator studio and API for creating/publishing quizzes.
+- [x] Creator-only login/signup destination, sharing, and close/reopen controls.
+- [x] Homepage quiz choice/code, nickname, six selectable avatars; no player login.
+- [x] Persistent custom question snapshots, participant identity, and results.
+- [x] Reuse server scoring, deadlines, ownership, feedback, resume, and review.
+- [x] Creator-private participant results and protected management operations.
+- [x] End-to-end creator publication, anonymous joining, completion, and closure.
+
+## Seeded library, kids homepage, and rewards
+
+- [x] 50 titled ready quizzes, 15 questions each, 750 distinct prompts and 10 topics.
+- [x] Repeatable transactional seed; existing quizzes are preserved.
+- [x] Free catalogue with search, topic filters, pagination, and direct quest selection.
+- [x] Saved browser player passport, coins, XP, missions, and levels.
+- [x] Strict >90% mastery, eight avatar unlocks, and server-side equipment validation.
+- [x] Personal-best reward deltas and transaction-safe duplicate prevention.
+- [x] Original friendly owl/fox artwork, animated sections, mobile and reduced motion.
+- [x] Reward, level-up, and avatar celebrations with persisted result snapshots.
