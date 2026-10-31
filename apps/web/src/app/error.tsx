@@ -1,5 +1,8 @@
 "use client";
 import Link from "next/link";
+import { WorldBrand } from "@/features/public/brand";
+import { SceneArt } from "@/features/public/scene-art";
+import "@/features/public/public.css";
 export default function ErrorPage({ reset }: { reset: () => void }) {
-  return <main className="mx-auto max-w-lg px-6 py-20"><h1 className="text-3xl font-bold">Something went wrong.</h1><p className="my-5 text-[#6b786c]">Please try again. If this is a fresh installation, check your environment variables and database migrations.</p><button onClick={reset} className="mr-5 rounded-xl bg-primary px-5 py-3 text-white">Try again</button><Link href="/" className="underline">Back home</Link></main>;
+  return <main className="public-world world-status-page"><SceneArt/><section className="world-status-card"><WorldBrand/><p className="world-eyebrow">EVEN GREAT ADVENTURES TAKE A DETOUR</p><h1 className="serif">Something went wrong.</h1><p>Your next discovery is still waiting. Try again, or head back to the kingdom to choose a new path.</p><div className="world-status-actions"><button onClick={reset} className="world-button">Try again</button><Link href="/" className="world-button secondary">Back home</Link></div></section></main>;
 }

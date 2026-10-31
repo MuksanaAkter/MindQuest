@@ -10,7 +10,7 @@ export type CreatorQuiz = PublicQuiz & { published: boolean; participants: { id:
 
 export type PlayerTrophy = { quizId: string; title: string; icon: string; accuracy: number };
 export type PlayerState = { trophies: PlayerTrophy[]; name: string; avatar: Avatar; totalXp: number; coins: number; level: number; xpInLevel: number; unlockedAvatars: Avatar[]; completedQuizzes: number; masteredQuizzes: number; bestByQuiz: Record<string, number> };
-export type PlayerRewardSummary = { trophy?: boolean; newTrophy?: boolean; unlockedAvatars?: Avatar[]; xp: number; coins: number; accuracy: number; badge: string; unlockedAvatar: Avatar | null; level: number; previousLevel: number; totalXp: number; totalCoins: number; newBest: boolean };
+export type PlayerRewardSummary = { progression?: boolean; trophy?: boolean; newTrophy?: boolean; unlockedAvatars?: Avatar[]; xp: number; coins: number; accuracy: number; badge: string; unlockedAvatar: Avatar | null; level: number; previousLevel: number; totalXp: number; totalCoins: number; newBest: boolean };
 export type PlayerHistoryItem = { id: string; quizId: string; title: string; code: string; icon: string; name: string; avatar: Avatar; total: number; correct: number; answered: number; score: number; accuracy: number | null; startedAt: string; completedAt: string | null; abandoned: boolean; reward: PlayerRewardSummary | null };
 export type PlayerHistory = { player: PlayerState; attempts: PlayerHistoryItem[]; nextCursor: string | null; totalAttempts: number; finishedAttempts: number };
 export type CreatorOverview = { quizzes: (PublicQuiz & { published: boolean; attempts: number; finished: number; averageAccuracy: number | null })[]; totals: { quizzes: number; published: number; attempts: number; finished: number } };

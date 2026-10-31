@@ -4,7 +4,7 @@ import { getDb } from "../../db";
 import type { GameAttempt, Prisma } from "../../generated/prisma/client";
 import type { AnswerReview, ArenaConfig, ArenaOverview, ArenaView } from "../shared/contracts";
 import { answerPoints, QUESTION_SECONDS, resultRank, roundXp } from "../shared/scoring";
-import { grantLibraryReward } from "../../quizzes/player";
+import { grantQuizReward } from "../../quizzes/player";
 import type { PlayerRewardSummary } from "../../quizzes/contracts";
 import { QUESTIONS } from "./questions";
 import { seededRandom, selectQuestions, shuffled } from "./selection";
@@ -105,7 +105,7 @@ export async function actOnRound(owner: Owner, id: string, action: { action: "an
     }
     if (completed && attempt.quizId) {
       const libraryQuiz = await tx.quiz.findUnique({ where: { id: attempt.quizId }, select: { builtIn: true } });
-      if (libraryQuiz?.builtIn) state.playerReward = await grantLibraryReward(tx, attempt.ownerKey, attempt.quizId, correctCount, state.questions.length);
+      if (libraryQuiz) state.playerReward = await grantQuizReward(tx, attempt.ownerKey, attempt.quizId, correctCount, state.questions.length, libraryQuiz.builtIn);
     }
     const updated = await tx.gameAttempt.update({ where: { id }, data: { state: asJson(state), score: attempt.score + points, correctCount, bestStreak: Math.max(attempt.bestStreak, state.streak), completedAt: completed ? new Date() : null, xpAwarded } });
     return publicView(updated);

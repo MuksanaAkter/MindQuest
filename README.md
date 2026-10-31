@@ -21,10 +21,11 @@ Library rewards are server-authoritative and saved against the browser's HttpOnl
 guest identity in PostgreSQL:
 
 - 10 XP and 2 virtual coins per correct answer in a quiz's personal best.
-- Strictly **above 90%** earns a mastery badge, 100 bonus XP, and 50 bonus coins.
+- Strictly **above 90%** earns a trophy, 100 bonus XP, and 50 bonus coins.
   With 15 questions, 14 correct (93%) qualifies and 13 correct does not.
-- First mastery of a distinct quiz unlocks the next of eight rare avatars. Six base
-  avatars are available immediately; locked avatars cannot be equipped through API tampering.
+- Five avatars are free. Levels 2–11 each unlock one of ten additional avatars.
+  Scoring above 90% wins one persistent trophy per quiz, independently of avatar unlocks.
+  Previously earned rare avatars remain available. Locked equipment is validated on the server.
 - Replays award only the improvement over the previous best, preventing duplicate
   treasure. Completion, best-score updates, coins, and unlocks share one transaction.
 - Each 300 XP adds an explorer level. Missions reflect actual completion, mastery,
@@ -33,8 +34,8 @@ guest identity in PostgreSQL:
 These are virtual game rewards. Guest progression belongs to this browser, is shared
 by names used in that browser, and is lost to the player if its guest cookie is cleared.
 It is not automatically an authenticated account or cross-device profile. Creator-made
-quizzes retain scores and private results; library rewards apply only to trusted seeded
-quizzes. Built-in five-question Arena practice retains its separate account-XP rules.
+quizzes retain scores, private results and above-90% trophies; XP and coins apply only
+to trusted seeded library quizzes. Built-in five-question Arena practice retains its separate account-XP rules.
 
 ## Creator and participant flows
 
@@ -43,7 +44,7 @@ quizzes. Built-in five-question Arena practice retains its separate account-XP r
   answers, optional explanations, and an optional 25-second timer per question.
 - Each quiz gets an 8-character join code and a copyable homepage join link.
 - Participants select a published quiz or enter its code, then choose a name and
-  one of six avatars. No registration or login is required.
+  one of five free avatars. No registration or login is required.
 - Participant attempts and name/avatar snapshots persist in PostgreSQL. Reloading
   an owned `/play/:id` resumes the quiz or displays its saved result.
 - Only the quiz creator can see their quiz's participant results and close/reopen
@@ -51,7 +52,7 @@ quizzes. Built-in five-question Arena practice retains its separate account-XP r
 - Published quizzes appear in the public selector (up to 150, prioritising the library). Answer keys are
   never included in public listings or unanswered question payloads.
 - Custom quizzes use the existing authoritative Arena lifecycle and scoring.
-  Creator-authored quizzes do not award library rewards or account XP. Trusted seeded
+  Creator-authored quizzes award above-90% trophies, but no library XP/coins or account XP. Trusted seeded
   library quizzes award the browser player rewards described above.
 - Question content is immutable after publishing so existing attempts stay stable.
   Editing, deleting, live synchronized rooms, and public leaderboards are not
@@ -269,8 +270,8 @@ databases and auth URLs for previews. Deployment is not part of this initial set
 The homepage hero now plays an actual eight-second rendered cinemagraph, built from
 the original artwork with breathing characters, blinking eyes, floating books,
 water highlights, portal glow and fireflies. Self-hosted WebM/MP4 files loop muted
-and inline. Mobile uses a 768px MP4 (about 178 KiB); desktop uses 1280px MP4 with
-WebM fallback (about 625–678 KiB). An optimized poster stays visible until playback
+and inline. Mobile uses a 768px MP4 (about 192 KiB); desktop uses a 1280px MP4
+(about 758 KiB) with a WebM fallback (about 637 KiB). An optimized poster stays visible until playback
 starts and also handles loading/playback failures. Reduced-motion and data-saving
 preferences skip loading the video. Playback pauses outside the viewport or while
 the browser tab is hidden, and a button lets players pause or resume it.
@@ -284,3 +285,36 @@ All 50 catalogue titles now describe their subject plainly. Generic English/CSS
 filler answers have been replaced with topic-relevant distractors. To update a
 previously seeded installation without losing play records, run
 `npm run db:seed -- --refresh-library`; ordinary `db:seed` remains insert-only.
+
+Avatar progression now uses five free friends plus ten level rewards, unlocked one
+per level from level 2 through 11. Trophy collections use each quiz’s best accuracy,
+strictly above 90%; replaying a trophy-winning quiz never duplicates its trophy.
+The hero uses calm motion: gently floating books, breathing/blinking characters,
+water and soft light. Its camera, sky and planets stay still; shooting stars and
+the larger cinematic movements are removed.
+
+## Consistent page artwork and app icons
+
+The root App Router metadata includes a book-and-spark SVG app icon, multi-size
+`favicon.ico`, Apple touch icon and a violet browser theme colour. Shared original
+artwork (`creator-library.png`, `trophy-garden.png`) appears across auth, creator,
+player, result, personal quest, 404 and error views, with gradients that keep live
+text readable. Images are decorative where headings already describe the page.
+Auth submit buttons are styled through their fieldset boundary, with full input
+width, a 26px gap after the password field, and a separate 44px visibility control.
+The page audit covers phone, tablet and desktop widths, image loading, horizontal
+overflow, favicon responses, creator routes, gameplay and completed results.
+
+## Quiz timer, answer animations and sound
+
+Ready library quizzes now use a 25-second server-validated timer for each new
+attempt. Creator quizzes retain their timed/relaxed setting. Refresh an existing
+library with `npm run db:seed -- --refresh-library` to enable its timers; existing
+attempts keep their original settings and progress.
+
+The timer ring pulses and ticks during the final five seconds. Correct answers
+show a drawn checkmark, confetti, an animated points counter and an original
+ascending chime; incorrect answers and timeouts have gentler, distinct effects.
+Results include a short celebration. Sound starts after a browser interaction,
+can be muted in the game header, and stops immediately on mute. Reduced-motion
+preferences disable confetti, pulse and bounce effects.

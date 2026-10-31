@@ -36,7 +36,7 @@ authored entries and should grow with reviewed, versioned question content.
 
 - [x] Protected creator studio and API for creating/publishing quizzes.
 - [x] Creator-only login/signup destination, sharing, and close/reopen controls.
-- [x] Homepage quiz choice/code, nickname, six selectable avatars; no player login.
+- [x] Homepage quiz choice/code, nickname, five free selectable avatars; no player login.
 - [x] Persistent custom question snapshots, participant identity, and results.
 - [x] Reuse server scoring, deadlines, ownership, feedback, resume, and review.
 - [x] Creator-private participant results and protected management operations.
@@ -48,7 +48,7 @@ authored entries and should grow with reviewed, versioned question content.
 - [x] Repeatable transactional seed; existing quizzes are preserved.
 - [x] Free catalogue with search, topic filters, pagination, and direct quest selection.
 - [x] Saved browser player passport, coins, XP, missions, and levels.
-- [x] Strict >90% mastery, eight avatar unlocks, and server-side equipment validation.
+- [x] Strict >90% trophies, ten level-based avatar unlocks, and server-side equipment validation.
 - [x] Personal-best reward deltas and transaction-safe duplicate prevention.
 - [x] Original friendly owl/fox artwork, animated sections, mobile and reduced motion.
 - [x] Reward, level-up, and avatar celebrations with persisted result snapshots.
@@ -62,3 +62,13 @@ authored entries and should grow with reviewed, versioned question content.
 - [x] Public `/me` with persistent complete history, review/resume, levels and prizes.
 - [x] Authenticated `/dashboard` with creator aggregates and private participant results.
 - [x] Pagination and ownership checks for player history and creator reports.
+
+## Page polish and visual checks
+
+- [x] App-wide SVG/ICO favicon, Apple touch icon and browser theme colour.
+- [x] Auth button width/spacing fixed through the hydration fieldset boundary.
+- [x] Original creator-library and player-trophy artwork across the app.
+- [x] Dark, consistent personal quests, 404 and error views.
+- [x] Page-by-page image loading and overflow checks on phone/tablet/desktop.
+
+- [x] Server-validated library countdowns, urgent ticks/pulse, animated answer feedback/points, original correct/wrong/timeout/completion sounds, mute and reduced-motion support.

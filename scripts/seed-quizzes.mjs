@@ -16,10 +16,10 @@ try {
   const refresh = process.argv.includes("--refresh-library");
   for (const quiz of catalogue) {
     // Never touch creator-authored rows or overwrite existing published content.
-    const result = await client.query('INSERT INTO "Quiz" (id, "creatorId", title, code, questions, timed, published, "createdAt", "builtIn", "seedKey", topic, icon, description, "difficultyLabel") VALUES ($1,$2,$3,$4,$5::jsonb,false,true,NOW(),true,$6,$7,$8,$9,$10) ON CONFLICT ("seedKey") DO NOTHING', [quiz.seedKey, "mindquest-library", quiz.title, quiz.code, JSON.stringify(quiz.questions), quiz.seedKey, quiz.topic, quiz.icon, quiz.description, quiz.difficultyLabel]);
+    const result = await client.query('INSERT INTO "Quiz" (id, "creatorId", title, code, questions, timed, published, "createdAt", "builtIn", "seedKey", topic, icon, description, "difficultyLabel") VALUES ($1,$2,$3,$4,$5::jsonb,true,true,NOW(),true,$6,$7,$8,$9,$10) ON CONFLICT ("seedKey") DO NOTHING', [quiz.seedKey, "mindquest-library", quiz.title, quiz.code, JSON.stringify(quiz.questions), quiz.seedKey, quiz.topic, quiz.icon, quiz.description, quiz.difficultyLabel]);
     inserted += result.rowCount ?? 0;
     if (refresh && !result.rowCount) {
-      const changed = await client.query('UPDATE "Quiz" SET title=$1, questions=$2::jsonb, description=$3, "difficultyLabel"=$4 WHERE "seedKey"=$5 AND "builtIn"=true AND "creatorId"=$6', [quiz.title, JSON.stringify(quiz.questions), quiz.description, quiz.difficultyLabel, quiz.seedKey, "mindquest-library"]);
+      const changed = await client.query('UPDATE "Quiz" SET timed=true, title=$1, questions=$2::jsonb, description=$3, "difficultyLabel"=$4 WHERE "seedKey"=$5 AND "builtIn"=true AND "creatorId"=$6', [quiz.title, JSON.stringify(quiz.questions), quiz.description, quiz.difficultyLabel, quiz.seedKey, "mindquest-library"]);
       refreshed += changed.rowCount ?? 0;
     }
   }

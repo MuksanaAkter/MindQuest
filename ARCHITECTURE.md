@@ -83,8 +83,9 @@ The seed is transactional and idempotent by unique `seedKey`; a second run inser
 `PlayerQuizProgress` has a unique owner/quiz key and records best answers and total
 rewards earned. At completion, the existing attempt row lock and an advisory player
 lock serialise attempts, including different quizzes. Only increases to a personal
-best add XP/coins. A first score strictly above 90% grants mastery and one previously
-locked avatar. The result stores a reward snapshot; rereading it grants nothing.
+best on trusted library quizzes add XP/coins. Creator quizzes can earn trophies but
+contribute no XP or coins. A first score strictly above 90% grants a persistent trophy. Avatar
+unlocks instead derive from server XP levels: five base avatars plus one at each level 2–11. The result stores a reward snapshot; rereading it grants nothing.
 Avatar equipment is checked server-side against base and persisted unlocked avatars.
 Levels derive from XP at 300 XP per level. Guest progress is browser-scoped rather
 than nickname-authenticated, and has no cash, purchase, or competitive value.

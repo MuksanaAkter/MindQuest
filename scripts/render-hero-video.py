@@ -1,4 +1,4 @@
-"""Render the original MindQuest artwork as a seamless 8-second cinemagraph.
+"""Render the original MindQuest artwork as a calm, seamless 8-second cinemagraph.
 Requirements: Python 3, Pillow, ffmpeg. No network calls, runtime renderer or audio.
 Original raster remains untouched; displacement, eyelids and light are video layers.
 Run from the repository root: python3 scripts/render-hero-video.py
@@ -15,7 +15,7 @@ base=Image.open(ROOT/'apps/web/public/images/curiosity-kingdom.png').convert('RG
 TAU=math.tau
 
 def field(x,y,t):
-    """Periodic mesh displacement: anchored breathing, tail, water and floating books."""
+    """Periodic mesh displacement: anchored breathing, tail, water and gently floating books."""
     x/=S;y/=S; p=TAU*t/DURATION
     def g(cx,cy,rx,ry):return math.exp(-(((x-cx)/rx)**2+((y-cy)/ry)**2)*2)
     owl=g(1120,640,145,200)
@@ -26,12 +26,9 @@ def field(x,y,t):
         radius=((x-cx)/rx)**2+((y-cy)/ry)**2
         return math.exp(-(radius**3)*1.2)
     book=floating(1354,174,95,86)+floating(710,252,90,80)+floating(882,215,48,50)+floating(1440,278,110,85)
-    saturn=floating(895,77,145,94)
-    moon=floating(1265,58,50,48)
-    violet=floating(950,161,36,39)
-    sky=g(350,170,520,340)
-    dx=(x-1120)*.012*math.sin(p)*owl+(x-1320)*.008*math.sin(p+.8)*fox+6*math.sin(p)*tail+1.8*math.sin(p*4+y/21)*fall+11*math.cos(p)*book+13*math.sin(p)*saturn-9*math.sin(p)*moon+8*math.sin(p+.5)*violet+8*math.sin(p)*sky
-    dy=2.2*math.sin(p)*owl+1.7*math.sin(p+.8)*fox+2*math.sin(p+.4)*tail+1.1*math.sin(p*4+y/19)*fall+21*math.sin(p)*book+9*math.cos(p)*saturn+12*math.sin(p)*moon+8*math.cos(p+.5)*violet+4*math.cos(p)*sky
+    # Keep the sky and planets still; books drift only a few pixels.
+    dx=(x-1120)*.012*math.sin(p)*owl+(x-1320)*.008*math.sin(p+.8)*fox+3*math.sin(p)*tail+1.8*math.sin(p*4+y/21)*fall+1.8*math.cos(p)*book
+    dy=2.2*math.sin(p)*owl+1.7*math.sin(p+.8)*fox+1.5*math.sin(p+.4)*tail+1.1*math.sin(p*4+y/19)*fall+3*math.sin(p)*book
     return dx*S,dy*S
 
 # Stable target rectangles; sample source quadrilaterals each frame.
@@ -90,20 +87,6 @@ try:
             alpha=int(math.sin(math.pi*phase)**2*150)
             x=cx+8*S*math.sin(TAU*phase);y=cy-45*S*phase
             paint.ellipse((x-r,y-r,x+r,y+r),fill=(255,222,145,alpha))
-        # Slow, seamless shooting stars and twinkling constellations in the upper sky.
-        for offset in [0,.5]:
-            phase=(t/DURATION+offset)%1
-            alpha=int(math.sin(math.pi*phase)**6*200)
-            hx=(1480-620*phase)*S;hy=(25+270*phase)*S
-            for trail in range(14):
-                fade=alpha*(1-trail/14)
-                paint.line((hx+trail*4*S,hy-trail*1.7*S,hx+(trail+1)*4*S,hy-(trail+1)*1.7*S),fill=(195,221,255,int(fade)),width=2)
-            paint.ellipse((hx-2,hy-2,hx+2,hy+2),fill=(240,247,255,alpha))
-        for j in range(12):
-            sx=(650+(j*97)%820)*S;sy=(30+(j*43)%245)*S
-            alpha=int((.5+.5*math.sin(p*2+j))**3*150)
-            paint.line((sx-3,sy,sx+3,sy),fill=(255,231,177,alpha),width=1)
-            paint.line((sx,sy-3,sx,sy+3),fill=(255,231,177,alpha),width=1)
         # Moving highlights confined to the falling-water bands.
         for x,y0,y1,width in [(836,500,650,13),(1072,501,631,12),(1111,504,612,9),(635,716,782,8)]:
             for j in range(5):
@@ -111,12 +94,7 @@ try:
                 alpha=int(math.sin(math.pi*phase)**2*52)
                 paint.line(((x+math.sin(phase*TAU)*2)*S,y*S,(x+width*.2)*S,(y+12)*S),fill=(185,234,255,alpha),width=max(1,round(width*.15*S)))
         frame=Image.alpha_composite(frame.convert('RGBA'),overlay).convert('RGB')
-        # A gentle camera push and orbit completes the cinematic depth movement.
-        zoom=1.035+.010*math.sin(p)
-        size=(round(W*zoom),round(H*zoom))
-        frame=frame.resize(size,Image.Resampling.BICUBIC)
-        left=round((size[0]-W)/2+8*math.sin(p));top=round((size[1]-H)/2+5*math.cos(p))
-        frame=frame.crop((left,top,left+W,top+H))
+        # A fixed camera keeps the scene calm without zooming or orbiting.
         encoder.stdin.write(frame.tobytes())
         if index%48==0:print(f'Rendered {index}/{FPS*DURATION} frames',flush=True)
 finally:

@@ -43,6 +43,10 @@ test("only creators log in; a named avatar can join, finish, and appear in priva
     await expect(participant.getByText("1/1", { exact: true })).toBeVisible();
     await expect(participant.getByText("Ada Explorer · Your result is saved for the quiz creator.")).toBeVisible();
     await participant.reload(); await expect(participant.getByText("1/1", { exact: true })).toBeVisible();
+    await expect(participant.getByText("New trophy earned!", { exact: true })).toBeVisible();
+    const trophyProfile = await (await participant.request.get("/api/player")).json();
+    expect(trophyProfile.trophies).toHaveLength(1); expect(trophyProfile.totalXp).toBe(0);
+    expect(trophyProfile.unlockedAvatars).toHaveLength(5);
     expect((await participant.request.get("/api/quizzes")).status()).toBe(401);
     await page.goto("/dashboard");
     await expect(page.getByRole("heading", { name: "Creator dashboard", exact: true })).toBeVisible();
