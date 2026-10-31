@@ -2,13 +2,14 @@
   "name": "mindquest",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.30.1",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "npm run dev --workspace @mindquest/web",
-    "build": "prisma generate && npm run build --workspace @mindquest/web",
-    "start": "npm run start --workspace @mindquest/web",
+    "dev": "pnpm --filter @mindquest/web dev",
+    "build": "prisma generate && pnpm --filter @mindquest/web build",
+    "start": "pnpm --filter @mindquest/web start",
     "lint": "eslint .",
     "typecheck": "prisma generate && tsc --noEmit -p apps/server && tsc --noEmit -p apps/web && tsc --noEmit -p tsconfig.json",
     "test": "jest",
@@ -38,9 +39,5 @@
     "jest-environment-jsdom": "^30.0.0",
     "@playwright/test": "^1.56.0",
     "dotenv": "^17.0.0"
-  },
-  "workspaces": [
-    "apps/web",
-    "apps/server"
-  ]
+  }
 }
