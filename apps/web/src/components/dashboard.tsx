@@ -35,7 +35,13 @@ export function Dashboard({ name, totalXp, quests }: { name: string; totalXp: nu
   }
   async function signOut() {
     setPending("logout"); setError("");
-    try { const result = await authClient.signOut(); if (result.error) throw new Error(); window.location.assign("/login"); }
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error();
+      // Clear session-bound client caches after signing out.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign("/login");
+    }
     catch { setError("Unable to log out. Try again."); } finally { setPending(null); }
   }
   const inputClass = "mt-2 w-full rounded-xl border border-[#d5ddcf] bg-white p-3";

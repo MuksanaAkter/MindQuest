@@ -1,11 +1,16 @@
 import { test, expect } from "@playwright/test";
-test("visitor can try a quest and navigate to signup", async ({ page }) => {
+test("visitor can explore Arena settings and the guide", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("extraordinary");
-  await page.getByRole("button", { name: /Read a few pages/ }).click();
-  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "20");
-  await page.getByRole("link", { name: "Begin your journey" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your adventure starts here.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Knowledge Arena");
+  await page.getByRole("button", { name: "Enter the arena" }).click();
+  await page.getByRole("button", { name: /Science & nature/ }).click();
+  await expect(page.getByRole("button", { name: /Science & nature/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("switch", { name: "Race the hourglass" }).click();
+  await expect(page.getByRole("switch")).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "The adventurer’s guide", exact: true }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "Got it. Let’s explore." }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
 });
 test("health endpoint responds", async ({ request }) => {
   const response = await request.get("/api/health");

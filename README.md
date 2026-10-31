@@ -4,6 +4,42 @@ A TypeScript monorepo with separate `apps/web` and `apps/server` workspaces.
 Next.js runs the UI, API entrypoints, and backend logic in one application.
 `apps/server` is a server package, not a separately running Express/NestJS service.
 
+## Knowledge Arena
+
+Open `/` or `/arena` for the playable fantasy learning game. Knowledge Arena has
+72 authored questions across science, world geography, and history/culture, three
+difficulties, five-question shuffled rounds, timed/relaxed play, streak bonuses,
+explanations, results review, recent personal bests, resume, and replay. A daily
+expedition uses a shared UTC date seed. Original artwork is stored locally in
+`apps/web/public/images/knowledge-kingdom.png` and displayed with Next.js Image.
+
+The answer bank stays on the server. PostgreSQL stores attempts and answer history.
+Server timestamps enforce question deadlines. Row locks serialize submissions;
+a unique reward ledger and progress update commit together. Guests can play with
+browser-cookie-linked practice history; authenticated players earn account XP.
+Daily XP is awarded only for the first completed daily round per account and UTC day.
+History displays the latest 30 completed rounds. Guest history is not transferred on signup.
+
+See [PROJECT_PLAN.md](PROJECT_PLAN.md), [ARCHITECTURE.md](ARCHITECTURE.md), and
+[FEATURE_CHECKLIST.md](FEATURE_CHECKLIST.md) for scope, decisions, and later modes.
+Other modes are visibly marked as future content.
+
+### This checkout's local database
+
+This development environment has a native PostgreSQL cluster under ignored
+`.local/postgres`, listening only on `127.0.0.1:55432`. Its generated credentials
+are in ignored local files; `apps/web/.env` already points to it. Both migrations
+have been applied. After restarting this environment, start it from the repo root:
+
+```bash
+pg_ctl -D .local/postgres -l .local/postgres.log -o "-h 127.0.0.1 -p 55432 -k /tmp" start
+npm run dev
+```
+
+To stop that local database: `pg_ctl -D .local/postgres stop`. Keep `.local` if you
+want to preserve local data. The Docker setup below remains an alternative: use
+the URL in `.env.example` when switching to Docker. Never share local secret files.
+
 ## Stack
 
 Next.js App Router, Tailwind CSS v4, Framer Motion, Lucide React, PostgreSQL,
@@ -58,13 +94,13 @@ openssl rand -base64 32
 ```
 
 Paste the generated secret into `BETTER_AUTH_SECRET` in `apps/web/.env`.
-The homepage demo works without PostgreSQL:
+The public Arena lobby renders without PostgreSQL; actual gameplay requires it:
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000. For signup, login, and saved quests, set `DATABASE_URL`
+Open http://localhost:3000. For gameplay, signup, login, and saved quests, set `DATABASE_URL`
 in `apps/web/.env` to your PostgreSQL URL, or start the included local database:
 
 ```bash
@@ -88,7 +124,7 @@ Commit the new migration directory. `npm run db:studio` opens Prisma Studio.
 
 ## Starter behavior
 
-- Public homepage with a separate interactive quest preview.
+- Fantasy Knowledge Arena with saved gameplay, results, daily expeditions, and replay.
 - Email/password signup, login, logout, and server-protected dashboard.
 - Create personal quests with server-validated difficulty.
 - Complete owned quests and award XP atomically, once per quest.
@@ -102,6 +138,10 @@ quests and completion verification.
 
 ## API
 
+- `GET /api/arena`: guest/account overview and history.
+- `POST /api/arena`: start a validated round configuration.
+- `GET /api/arena/:id`: resume an owned attempt.
+- `POST /api/arena/:id`: validated `answer` or `next` action.
 - `GET /api/health`: application liveness, not database readiness.
 - `/api/auth/*`: Better Auth endpoints.
 - `GET /api/quests`: current user's quests.
@@ -122,16 +162,16 @@ npm run test:e2e
 ```
 
 Jest tests cover level boundaries, validation, API ownership checks, and repeat completion.
-Public Playwright tests run without a database. To test signup, session protection,
-ownership, and concurrent completion, configure a **disposable migrated database**
+Public lobby Playwright tests run without a database. To test gameplay, timers,
+authenticated/daily rewards, signup, ownership, and concurrent completion, configure a **disposable migrated database**
 in `apps/web/.env`, then run:
 
 ```bash
 RUN_DB_E2E=1 npm run test:e2e
 ```
 
-This creates test accounts and quests in that database. CI runs typecheck, schema
-validation, Jest, and the production build. PostgreSQL E2E tests are opt-in.
+This creates test attempts and temporary accounts in that database. CI runs lint,
+typecheck, schema validation, Jest, and the production build. PostgreSQL E2E tests are opt-in.
 
 ## Vercel later
 

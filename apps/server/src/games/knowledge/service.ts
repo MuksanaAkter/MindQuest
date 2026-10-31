@@ -33,14 +33,14 @@ export function publicView(attempt: GameAttempt): ArenaView {
 }
 export async function overview(owner: Owner): Promise<ArenaOverview> {
   const db = getDb();
-  const [history, active, progress] = await Promise.all([
+  const [history, active, progress, daily] = await Promise.all([
     db.gameAttempt.findMany({ where: { ownerKey: owner.key, completedAt: { not: null } }, orderBy: { completedAt: "desc" }, take: 30 }),
     db.gameAttempt.findFirst({ where: { ownerKey: owner.key, completedAt: null, abandonedAt: null }, orderBy: { startedAt: "desc" } }),
     owner.userId ? db.progress.findUnique({ where: { userId: owner.userId } }) : null,
+    db.gameAttempt.findFirst({ where: { ownerKey: owner.key, completedAt: { not: null }, startedAt: { gte: new Date(new Date().toISOString().slice(0, 10) + "T00:00:00.000Z") }, config: { path: ["daily"], equals: true } }, select: { id: true } }),
   ]);
-  const today = new Date().toISOString().slice(0, 10);
   return { authenticated: !!owner.userId, name: owner.name, totalXp: progress?.totalXp ?? 0, activeId: active?.id ?? null,
-    dailyCompleted: history.some((a) => configOf(a).daily && a.startedAt.toISOString().startsWith(today)),
+    dailyCompleted: !!daily,
     history: history.map((a) => ({ id: a.id, score: a.score, correctCount: a.correctCount, config: configOf(a), completedAt: a.completedAt!.toISOString(), xpAwarded: a.xpAwarded })),
   };
 }
@@ -50,7 +50,7 @@ export async function startRound(owner: Owner, requested: ArenaConfig) {
   const questions = selectQuestions(config, seed).map((q) => ({ id: q.id, choices: shuffled(q.options.map((_, option) => ({ option, id: randomUUID() })), seededRandom(`${seed}-${q.id}`)) }));
   const state: AttemptState = { phase: "question", index: 0, questions, answers: [], questionStartedAt: now.toISOString(), streak: 0 };
   const attempt = await getDb().$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${owner.key}))`;
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${owner.key}))::text`;
     const recent = await tx.gameAttempt.count({ where: { ownerKey: owner.key, startedAt: { gte: new Date(now.getTime() - 3600000) } } });
     if (recent >= 60) throw new ArenaError(429, "Take a short break. You can start more expeditions in an hour.");
     await tx.gameAttempt.updateMany({ where: { ownerKey: owner.key, completedAt: null, abandonedAt: null }, data: { abandonedAt: now } });
@@ -61,7 +61,8 @@ export async function startRound(owner: Owner, requested: ArenaConfig) {
 export async function readRound(owner: Owner, id: string) {
   const attempt = await getDb().gameAttempt.findFirst({ where: { id, ownerKey: owner.key, abandonedAt: null } });
   if (!attempt) throw new ArenaError(404, "Expedition not found. Start a new round.");
-  return publicView(attempt);
+  const view = publicView(attempt);
+  return attempt.completedAt ? { ...view, phase: "results" as const, feedback: null, question: null, deadline: null } : view;
 }
 export async function actOnRound(owner: Owner, id: string, action: { action: "answer"; questionId: string; choiceId: string | null } | { action: "next"; questionId: string }) {
   return getDb().$transaction(async (tx) => {
