@@ -43,6 +43,8 @@ MindQuest/
 └── package.json                 # Workspace commands
 ```
 
+Development and production builds use Next.js Webpack mode for local environment compatibility.
+
 Run all commands from the repository root. Install once at the root; do not
 create separate lockfiles inside the apps. Server-only entrypoints use
 `server-only`; browser-safe rules and validation have separate package exports.

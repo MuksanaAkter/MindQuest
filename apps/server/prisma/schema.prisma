@@ -19,6 +19,8 @@ model User {
   accounts      Account[]
   quests        Quest[]
   progress      Progress?
+  gameAttempts  GameAttempt[]
+  gameRewards   GameReward[]
 }
 
 model Session {
@@ -88,4 +90,35 @@ enum Difficulty {
   EASY
   MEDIUM
   HARD
+}
+
+model GameAttempt {
+  id            String    @id @default(cuid())
+  ownerKey      String
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode          String    @default("knowledge")
+  config        Json
+  state         Json
+  score         Int       @default(0)
+  correctCount  Int       @default(0)
+  bestStreak    Int       @default(0)
+  xpAwarded     Int       @default(0)
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  abandonedAt   DateTime?
+  reward        GameReward?
+  @@index([ownerKey, startedAt])
+}
+
+model GameReward {
+  id        String      @id @default(cuid())
+  attemptId String      @unique
+  attempt   GameAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claimKey  String      @unique
+  xp        Int
+  createdAt DateTime    @default(now())
+  @@index([userId, createdAt])
 }

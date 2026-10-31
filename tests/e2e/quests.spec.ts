@@ -27,6 +27,7 @@ test("account owns its quests and completion awards XP once", async ({ page, pla
     await expect(page.getByRole("button", { name: "Done", exact: true })).toBeDisabled();
     await page.getByRole("button", { name: "Log out" }).click();
     await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome back.");
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login$/);
   } finally { await outsider.dispose(); }

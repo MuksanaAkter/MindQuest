@@ -10,7 +10,10 @@
     "./game": "./src/game.ts",
     "./validation": "./src/validations/quest.ts",
     "./quests": "./src/routes/quests.ts",
-    "./complete-quest": "./src/routes/complete-quest.ts"
+    "./complete-quest": "./src/routes/complete-quest.ts",
+    "./arena": "./src/routes/arena.ts",
+    "./arena/contracts": "./src/games/shared/contracts.ts",
+    "./arena/scoring": "./src/games/shared/scoring.ts"
   },
   "dependencies": {
     "@prisma/client": "^7.0.0",

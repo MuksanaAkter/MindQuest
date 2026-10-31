@@ -1,12 +1,2 @@
-import Link from "next/link";
-import { ArrowUpRight, ArrowRight, Compass, Sparkles, TrendingUp } from "lucide-react";
-import { Logo } from "@/components/logo";
-import { QuestPreview } from "@/components/quest-preview";
-export default function Home() {
-  return <div className="mx-auto max-w-7xl px-6 sm:px-10">
-    <header className="flex h-24 items-center justify-between border-b border-[#dfe5da]"><Logo /><nav aria-label="Main navigation" className="flex items-center gap-6 text-sm font-semibold"><Link href="/login" className="hover:text-primary">Log in</Link><Link href="/signup" className="rounded-full bg-primary px-5 py-3 text-white hover:bg-[#194c37]">Get started <ArrowUpRight className="ml-1 inline" size={16} /></Link></nav></header>
-    <main><section className="grid items-center gap-14 py-16 lg:grid-cols-2 lg:gap-20 lg:py-24"><div><span className="inline-flex items-center gap-2 rounded-full border border-[#d7e1cd] bg-[#edf2e5] px-4 py-2 text-xs font-bold tracking-wider text-primary"><span className="h-2 w-2 rounded-full bg-primary" /> A SMALL STEP. A NEW ADVENTURE.</span><h1 className="mt-7 text-5xl font-bold leading-[1.08] tracking-[-.055em] sm:text-7xl">Your everyday.<br />A little more<br /><span className="text-primary">extraordinary.</span></h1><p className="mt-7 max-w-md text-lg leading-8 text-[#6b786c]">Turn the things you want to do into quests you look forward to. Find your focus, earn your XP, and grow at your own pace.</p><Link href="/signup" className="mt-9 inline-flex items-center gap-3 rounded-full bg-primary px-7 py-4 font-semibold text-white hover:bg-[#194c37]">Begin your journey <ArrowRight size={18} /></Link><p className="mt-4 text-xs text-[#788475]">One quest at a time. Every small win counts.</p></div><QuestPreview /></section>
-    <section className="border-t border-[#dfe5da] py-12"><p className="mb-8 text-xs font-bold tracking-[.2em] text-[#788475]">LESS PRESSURE. MORE PROGRESS.</p><div className="grid gap-8 sm:grid-cols-3">{[{ icon: Compass, title: "Choose your quest", text: "Give your goals a clear, achievable next step." }, { icon: Sparkles, title: "Celebrate the small wins", text: "Complete a quest and earn XP for showing up." }, { icon: TrendingUp, title: "Watch yourself grow", text: "Build your level as little steps add up." }].map((item) => <div key={item.title} className="flex gap-4"><item.icon size={23} className="mt-1 shrink-0 text-primary" /><div><h2 className="font-bold">{item.title}</h2><p className="mt-2 max-w-xs text-sm leading-6 text-[#6b786c]">{item.text}</p></div></div>)}</div></section></main>
-    <footer className="flex flex-wrap justify-between gap-3 border-t border-[#dfe5da] py-6 text-xs text-[#788475]"><span>MindQuest · Make progress feel good.</span><span>Built for your next small step.</span></footer>
-  </div>;
-}
+import { Arena } from "@/features/arena/arena";
+export default function Home() { return <Arena />; }

@@ -35,7 +35,7 @@ export function Dashboard({ name, totalXp, quests }: { name: string; totalXp: nu
   }
   async function signOut() {
     setPending("logout"); setError("");
-    try { const result = await authClient.signOut(); if (result.error) throw new Error(); router.push("/login"); router.refresh(); }
+    try { const result = await authClient.signOut(); if (result.error) throw new Error(); window.location.assign("/login"); }
     catch { setError("Unable to log out. Try again."); } finally { setPending(null); }
   }
   const inputClass = "mt-2 w-full rounded-xl border border-[#d5ddcf] bg-white p-3";

@@ -1,13 +1,11 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 const credentials = z.object({ email: z.email(), password: z.string().min(8).max(128) });
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const signup = mode === "signup";
-  const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -21,7 +19,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     try {
       const result = signup ? await authClient.signUp.email({ ...parsed.data, name }) : await authClient.signIn.email(parsed.data);
       if (result.error) { setError(result.error.message ?? "Unable to sign in. Please try again."); return; }
-      router.push("/dashboard"); router.refresh();
+      window.location.assign("/dashboard");
     } catch { setError("Unable to connect. Please try again shortly."); }
     finally { setPending(false); }
   }
