@@ -11,6 +11,17 @@ const notes: Record<GameCue, Note[]> = {
   timeout: [[392, 0, .15], [329.63, .15, .17], [261.63, .32, .27]],
   complete: [[523.25, 0, .15], [659.25, .15, .15], [783.99, .3, .15], [1046.5, .5, .45], [783.99, .5, .4], [659.25, .5, .4]],
 };
+// Keep the gesture-unlocked context across the popup → quiz client navigation.
+// Each mounted game owns its gain and sources, so leaving a quiz still stops it.
+let sharedContext: AudioContext | null = null;
+export function unlockGameAudio(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    if (!sharedContext || sharedContext.state === "closed") sharedContext = new AudioContext();
+    if (sharedContext.state === "suspended") void sharedContext.resume().catch(() => {});
+    return sharedContext;
+  } catch { return null; }
+}
 export function useGameAudio(enabled: boolean) {
   const enabledRef = useRef(enabled);
   const context = useRef<AudioContext | null>(null);
@@ -19,13 +30,12 @@ export function useGameAudio(enabled: boolean) {
   const clapNoise = useRef<AudioBuffer | null>(null);
   const unlock = useCallback(() => {
     try {
-      if (!context.current || context.current.state === "closed") {
-        context.current = new AudioContext();
+      context.current = unlockGameAudio();
+      if (context.current && !master.current) {
         master.current = context.current.createGain();
-        master.current.gain.value = .075;
+        master.current.gain.value = .14;
         master.current.connect(context.current.destination);
       }
-      if (context.current.state === "suspended") void context.current.resume().catch(() => {});
     } catch { /* Audio is optional on unsupported/restricted browsers. */ }
   }, []);
   useEffect(() => {
@@ -43,12 +53,18 @@ export function useGameAudio(enabled: boolean) {
     return () => { document.removeEventListener("pointerdown", activate, true); document.removeEventListener("keydown", activate, true); };
   }, [enabled, unlock]);
   useEffect(() => () => {
-    if (context.current && context.current.state !== "closed") void context.current.close().catch(() => {});
+    for (const source of active.current) { try { source.stop(); } catch { /* Already ended. */ } }
+    active.current.clear();
+    master.current?.disconnect();
     context.current = null; master.current = null; clapNoise.current = null;
   }, []);
   const play = useCallback((cue: GameCue) => {
+    if (document.hidden || !enabledRef.current) return;
+    unlock();
     const audio = context.current;
-    if (document.hidden || !enabledRef.current || !audio || audio.state !== "running" || !master.current) return;
+    if (!audio || !master.current || (cue === "tick" && audio.state !== "running")) return;
+    const schedule = () => {
+    if (document.hidden || !enabledRef.current || context.current !== audio || audio.state !== "running" || !master.current) return;
     try {
       if (cue === "correct" || cue === "complete") {
         // Short, overlapping filtered noise bursts imitate hands clapping.
@@ -88,7 +104,7 @@ export function useGameAudio(enabled: boolean) {
           oscillator.frequency.setValueAtTime(frequency, at);
           oscillator.frequency.exponentialRampToValueAtTime(frequency * .88, at + duration);
         }
-        gain.gain.setValueAtTime(.001, at); gain.gain.exponentialRampToValueAtTime(cue === "tick" ? .25 : .65, at + .008);
+        gain.gain.setValueAtTime(.001, at); gain.gain.exponentialRampToValueAtTime(cue === "tick" ? .4 : cue === "wrong" || cue === "timeout" ? .85 : .65, at + .008);
         gain.gain.exponentialRampToValueAtTime(.001, at + duration);
         oscillator.connect(gain); gain.connect(master.current);
         active.current.add(oscillator);
@@ -108,6 +124,9 @@ export function useGameAudio(enabled: boolean) {
         }
       }
     } catch { /* Gameplay remains available if audio output fails. */ }
-  }, []);
+    };
+    if (audio.state === "suspended") void audio.resume().then(schedule).catch(() => {});
+    else schedule();
+  }, [unlock]);
   return { play, unlock };
 }

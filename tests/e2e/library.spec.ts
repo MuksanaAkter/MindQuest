@@ -119,6 +119,19 @@ test("quiz card popup starts the selected quest directly with a name and buddy",
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs a disposable seeded PostgreSQL database.");
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   let ownerKey: string | undefined;
+  let releaseJoin!: () => void;
+  const joinGate = new Promise<void>((resolve) => { releaseJoin = resolve; });
+  await page.route("**/api/quizzes/join", async (route) => { await joinGate; await route.continue(); });
+  await page.addInitScript(() => {
+    const frequencies: number[] = [];
+    Object.defineProperty(window, "__popupFrequencies", { value: frequencies });
+    const original = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function() {
+      const oscillator = original.call(this); const start = oscillator.start.bind(oscillator);
+      oscillator.start = (at = 0) => { frequencies.push(oscillator.frequency.value); start(at); };
+      return oscillator;
+    };
+  });
   try {
     await page.goto("/");
     await page.locator(".quest-tile").filter({ has: page.getByRole("heading", { name: "Adding Numbers", exact: true }) }).click();
@@ -127,12 +140,19 @@ test("quiz card popup starts the selected quest directly with a name and buddy",
     await popup.getByLabel("Your player name", { exact: true }).fill("Popup Explorer");
     await popup.getByRole("button", { name: "fox avatar", exact: true }).click();
     await popup.getByRole("button", { name: "Let’s play!", exact: true }).click();
+    await expect(popup.getByRole("status")).toContainText("Opening your quiz…");
+    await expect(popup.locator(".quest-loader-buddy")).toBeVisible();
+    if (process.env.CAPTURE_QUIZ_PREVIEW === "1") await page.screenshot({ path: "/tmp/mindquest-quiz-loader.png" });
+    releaseJoin();
     await expect(page).toHaveURL(/\/play\/[^/]+$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Adding Numbers");
     await expect(page.locator(".participant-banner")).toContainText("Popup Explorer");
     await expect(page.locator(".participant-banner>span")).toHaveText("🦊");
     await expect(page.getByRole("timer")).toBeVisible();
+    // No gesture on the quiz page: the popup gesture must carry audio across navigation.
+    await expect.poll(() => page.evaluate(() => Reflect.get(window, "__popupFrequencies") as number[])).toContain(880);
   } finally {
+    releaseJoin();
     const guest = (await page.context().cookies()).find((cookie) => cookie.name === "mq_guest");
     if (guest) ownerKey = `guest:${guest.value}`;
     if (ownerKey) {
