@@ -6,6 +6,7 @@ import { ArrowRight, Check, ChevronDown, Compass, Trophy, X } from "lucide-react
 import type { ArenaConfig, ArenaView } from "@mindquest/server/arena/contracts";
 import { ResultCelebration } from "./game-effects";
 import { SceneArt } from "@/features/public/scene-art";
+import { QuizScoreboard } from "@/features/quizzes/scoreboard";
 import { RewardPanel } from "@/features/quizzes/reward-panel";
 import { quizCopy as qc } from "@/features/quizzes/copy";
 import { arenaCopy as c } from "../copy";
@@ -17,5 +18,6 @@ export function ArenaResults({ round, heading, pending, start, lobby }: Props) {
           {round.playerReward && <RewardPanel reward={round.playerReward} />}
           <div className="arena-result-actions">{round.quiz ? <><Link href="/#join-quiz" className="arena-button">{qc.playAgain}<ArrowRight size={14}/></Link><Link href="/me" className="arena-button secondary">My adventure<Trophy size={14}/></Link></> : <><button disabled={pending} onClick={() => start(round.config.daily, round.config)} className="arena-button">{c.replay}<ArrowRight size={14} /></button><button className="arena-button secondary" onClick={lobby}>{c.changeRoute}<Compass size={14} /></button></>}</div>
           <p className="arena-result-notice">{round.quiz ? <>{round.quiz.participantName} · {round.quiz.library ? "Your result is saved in My adventure." : qc.resultSaved}</> : !round.authenticated ? <>{c.guestResult} <Link href="/signup" className="underline text-[#c5a4e4]">{c.signUp}</Link></> : round.config.daily && round.xpAwarded === 0 ? c.dailyNoReward : `${c.bestStreak}: ${round.bestStreak} · ${c.saved}`}</p>
+          {round.quiz && <QuizScoreboard key={round.quiz.id} quizId={round.quiz.id}/>}
           <h3 className="arena-review-heading serif">{c.review}</h3>{round.reviews.map((review, i) => <details className="arena-review" key={review.questionId} data-correct={review.correct}><summary><span className="sr-only">{review.correct ? "Correct: " : "Review: "}</span>{review.correct ? <Check className="right" size={16} /> : <X className="wrong" size={16} />}<span>{i + 1}. {review.prompt}</span><small className="arena-review-points">+{review.points}</small><ChevronDown size={13} /></summary><div className="arena-review-body">{!review.correct && <p className="arena-review-selected">{c.selected}: {review.selected ?? c.noAnswer}</p>}<p className="arena-review-answer">{c.correctAnswer}: {review.answer}</p><p>{review.explanation}</p></div></details>)}</>;
 }

@@ -11,6 +11,7 @@ and learn through colourful questions, friendly feedback, and little rewards.
 - Click any quiz card to enter your name, pick a buddy, and start playing.
 - 15-second questions, cheerful sound effects, and green/red answer animations.
 - Saved attempts, XP, virtual coins, level rewards, avatars, and mastery trophies.
+- Per-quiz scoreboards with nicknames, avatars, levels, and best completed scores.
 - Creator accounts to publish quizzes, share join codes, and view private results.
 
 Players can join without an account. Guest progress belongs to the current browser;

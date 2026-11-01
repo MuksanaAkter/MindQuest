@@ -15,3 +15,5 @@ export type PlayerHistoryItem = { id: string; quizId: string; title: string; cod
 export type PlayerHistory = { player: PlayerState; attempts: PlayerHistoryItem[]; nextCursor: string | null; totalAttempts: number; finishedAttempts: number };
 export type CreatorOverview = { quizzes: (PublicQuiz & { published: boolean; attempts: number; finished: number; averageAccuracy: number | null })[]; totals: { quizzes: number; published: number; attempts: number; finished: number } };
 export type CreatorResults = { participants: { id: string; name: string; avatar: Avatar; score: number; correct: number; total: number; startedAt: string; completedAt: string | null }[]; nextCursor: string | null; total: number };
+export type QuizScoreEntry = { rank: number; name: string; avatar: Avatar; score: number; level: number; isYou: boolean };
+export type QuizScoreboard = { entries: QuizScoreEntry[]; total: number; nextPage: number | null };

@@ -5,12 +5,12 @@ import { createPortal } from "react-dom";
 import { Check, Clock3, Frown } from "lucide-react";
 import "../game-effects.css";
 
-export function QuestionTimer({ remaining, duration }: { remaining: number; duration: number }) {
+export function QuestionTimer({ remaining, duration, paused = false }: { remaining: number; duration: number; paused?: boolean }) {
   const seconds = Math.max(0, remaining);
   const fraction = Math.min(1, Math.max(0, seconds / duration));
-  return <div className={`question-countdown ${seconds <= 5 ? "is-urgent" : ""}`} role="timer" aria-label={`${seconds} seconds remaining`}>
+  return <div className={`question-countdown ${seconds <= 5 && !paused ? "is-urgent" : ""} ${paused ? "is-paused" : ""}`} role="timer" aria-label={`${seconds} seconds remaining${paused ? ", checking answer" : ""}`}>
     <svg viewBox="0 0 72 72" aria-hidden="true"><circle className="countdown-track" cx="36" cy="36" r="30"/><circle className="countdown-fill" cx="36" cy="36" r="30" pathLength="100" strokeDasharray="100" strokeDashoffset={100 - fraction * 100}/></svg>
-    <div><strong>{seconds}</strong><small>SECONDS</small></div>
+    <div><strong>{seconds}</strong><small>{paused ? "CHECKING" : "SECONDS"}</small></div>
   </div>;
 }
 function PartyConfetti() {

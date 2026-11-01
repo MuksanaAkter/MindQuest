@@ -104,3 +104,10 @@ export async function CREATOR_RESULTS(request: Request, context: { params: Promi
   const participants = rows.slice(0, 30).map((a) => ({ id: a.id, name: a.participantName ?? "Participant", avatar: a.participantAvatar ?? "owl", score: a.score, correct: a.correctCount, total: (quiz.questions as unknown[]).length, startedAt: a.startedAt.toISOString(), completedAt: a.completedAt?.toISOString() ?? null }));
   return { participants, total, nextCursor: rows.length > 30 ? participants.at(-1)!.id : null };
 }); }
+
+export async function SCOREBOARD(request: Request, context: { params: Promise<{ id: string }> }) { return guarded(async () => {
+  const { id } = await context.params;
+  const page = z.coerce.number().int().min(0).max(1000).parse(new URL(request.url).searchParams.get("page") ?? 0);
+  const { getQuizScoreboard } = await import("../quizzes/scoreboard");
+  return getQuizScoreboard(id, await guestIdentity(), page);
+}); }

@@ -68,7 +68,7 @@ export async function readRound(owner: Owner, id: string) {
   const view = publicView(attempt);
   return attempt.completedAt ? { ...view, phase: "results" as const, feedback: null, question: null, deadline: null } : view;
 }
-export async function actOnRound(owner: Owner, id: string, action: { action: "answer"; questionId: string; choiceId: string | null } | { action: "next"; questionId: string }) {
+export async function actOnRound(owner: Owner, id: string, action: { action: "answer"; questionId: string; choiceId: string | null } | { action: "next"; questionId: string }, receivedAt = Date.now()) {
   return getDb().$transaction(async (tx) => {
     const locked = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "GameAttempt" WHERE "id" = ${id} AND ("ownerKey" = ${owner.key} OR "ownerKey" = ${owner.guestKey ?? owner.key}) AND "abandonedAt" IS NULL FOR UPDATE`;
     if (!locked.length) throw new ArenaError(404, "Expedition not found. Start a new round.");
@@ -84,7 +84,7 @@ export async function actOnRound(owner: Owner, id: string, action: { action: "an
     if (state.phase !== "question") return publicView(attempt);
     const q = stored.snapshot ?? questionFor(stored.id); const chosen = stored.choices.find((c) => c.id === action.choiceId);
     if (action.choiceId !== null && !chosen) throw new ArenaError(400, "Choose one of the available answers.");
-    const timedOut = config.timed && Date.now() >= new Date(state.questionStartedAt).getTime() + QUESTION_SECONDS[config.difficulty] * 1000;
+    const timedOut = config.timed && receivedAt >= new Date(state.questionStartedAt).getTime() + QUESTION_SECONDS[config.difficulty] * 1000;
     if (action.choiceId === null && !timedOut) throw new ArenaError(400, "Select an answer before continuing.");
     const correct = !timedOut && chosen?.option === 0;
     state.streak = correct ? state.streak + 1 : 0;
@@ -93,6 +93,7 @@ export async function actOnRound(owner: Owner, id: string, action: { action: "an
     state.phase = "feedback";
     const correctCount = attempt.correctCount + Number(correct);
     const completed = state.answers.length === state.questions.length;
+    if (completed && attempt.quizId) state.phase = "results";
     let xpAwarded = 0;
     if (completed && owner.userId && !attempt.quizId) {
       const claimKey = config.daily ? `daily:${owner.userId}:${attempt.startedAt.toISOString().slice(0, 10)}` : `attempt:${id}`;

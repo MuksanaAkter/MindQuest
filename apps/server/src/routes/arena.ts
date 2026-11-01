@@ -37,4 +37,7 @@ export async function guarded(run: () => Promise<unknown>) {
 export async function GET() { return guarded(async () => overview(await owner())); }
 export async function POST(request: Request) { return guarded(async () => { checkOrigin(request); const config = configSchema.parse(await request.json()); return startRound(await owner(), config); }); }
 export async function GET_ATTEMPT(_request: Request, context: { params: Promise<{ id: string }> }) { return guarded(async () => readRound(await owner(), (await context.params).id)); }
-export async function POST_ATTEMPT(request: Request, context: { params: Promise<{ id: string }> }) { return guarded(async () => { checkOrigin(request); const action = actionSchema.parse(await request.json()); return actOnRound(await owner(), (await context.params).id, action); }); }
+export async function POST_ATTEMPT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const receivedAt = Date.now();
+  return guarded(async () => { checkOrigin(request); const action = actionSchema.parse(await request.json()); return actOnRound(await owner(), (await context.params).id, action, receivedAt); });
+}
