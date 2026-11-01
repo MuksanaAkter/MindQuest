@@ -111,6 +111,13 @@ test("timer, correct/wrong/timeout animations, real sound scheduling and mute wo
     await page.getByRole("button",{name:"Reveal my results",exact:true}).click();
     await expect(page.getByText("1/4",{exact:true})).toBeVisible();
     await expect(page.locator(".result-celebration i")).toHaveCount(24);
+    await page.locator(".arena-review").first().locator("summary").click();
+    await expect(page.locator(".arena-review").first().locator(".arena-review-answer")).toBeVisible();
+    if (process.env.CAPTURE_QUIZ_PREVIEW === "1") {
+      await page.screenshot({ path: "/tmp/mindquest-purple-results.png", fullPage: true });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.screenshot({ path: "/tmp/mindquest-purple-results-mobile.png", fullPage: true });
+    }
     const final:ArenaView=await(await page.request.get(`/api/arena/${round.id}`)).json();expect(final.reviews).toHaveLength(4);
     await page.emulateMedia({reducedMotion:"reduce"});await expect(page.locator(".result-celebration")).toBeHidden();
     for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),`${width}px: ${JSON.stringify(await page.locator("body *").evaluateAll(nodes=>nodes.map(n=>({tag:n.tagName,cls:n.className,x:n.getBoundingClientRect().x,right:n.getBoundingClientRect().right})).filter(n=>n.right>innerWidth+1||n.x< -1)))}`).toBe(true);}
