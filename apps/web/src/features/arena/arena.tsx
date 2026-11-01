@@ -106,7 +106,11 @@ export function Arena({ attemptId, resultsPage = false }: { attemptId?: string; 
     finally { inFlight.current = false; setPending(false); }
   }
   function lobby() { if (attemptId) {
-    if (window.history.length > 1) router.back();
+    // New tabs can have an about:blank entry; it is not a useful return page.
+    const navigation = (window as Window & { navigation?: { currentEntry: { index: number } | null; entries(): { url: string | null }[] } }).navigation;
+    const previousUrl = navigation?.entries()[(navigation.currentEntry?.index ?? 0) - 1]?.url;
+    const hasPreviousPage = navigation ? !!previousUrl && /^https?:/.test(previousUrl) : window.history.length > 1;
+    if (hasPreviousPage) router.back();
     else router.replace("/library");
     return;
   } setLoading(true); setRound(null); setChoice(null); setError(""); void loadOverview(); }

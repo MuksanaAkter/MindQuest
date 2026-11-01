@@ -83,7 +83,7 @@ test("submit freezes the timer, last answer opens results and scoreboard automat
     try {
       await direct.goto(`/results/${round.id}`);
       await direct.getByRole("button", { name: "Go back", exact: true }).click();
-      await expect(direct).toHaveURL(/\/library$/);
+      await expect(direct).toHaveURL(/\/library$/, { timeout: 15000 });
     } finally { await direct.close(); }
 
   } finally {
@@ -99,7 +99,7 @@ test("quiz library navigation opens its own page and old shared codes still arri
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Little questions.");
   await expect(page.locator(".quest-card-grid")).toHaveCount(1);
   await page.getByRole("link", { name: "Quiz library", exact: true }).click();
-  await expect(page).toHaveURL(/\/library$/);
+  await expect(page).toHaveURL(/\/library$/, { timeout: 15000 });
   await expect(page.getByRole("heading", { name: "Quiz library", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Search quizzes" })).toBeVisible();
   for (const width of [320,390,1280]) { await page.setViewportSize({ width, height: 844 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }

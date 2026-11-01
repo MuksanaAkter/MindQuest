@@ -24,7 +24,17 @@ and a disposable seeded database for database-backed end-to-end tests.
 Use Node 24 and pnpm 10.30.1 (`corepack enable`). Copy
 `apps/web/.env.example` to `apps/web/.env` and set the four variables above.
 Use a development database and `BETTER_AUTH_URL=http://localhost:3000` locally.
-Never commit `apps/web/.env`. The README quick-start commands run from the project root.
+Never commit `apps/web/.env`. Run these commands from the project root after
+configuring the environment:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm db:deploy
+pnpm db:seed
+pnpm dev
+```
+
+Open [localhost:3000](http://localhost:3000). Run the checks before deploying:
 
 ```bash
 pnpm lint

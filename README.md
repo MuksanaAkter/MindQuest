@@ -3,41 +3,27 @@
 </p>
 
 <h1 align="center">MindQuest</h1>
-<p align="center">Learn. Play. Level up. A little adventure for curious minds.</p>
-<p align="center"><a href="https://mind-quest-henna.vercel.app/"><strong>Play MindQuest →</strong></a></p>
+<p align="center">Learn. Play. Level up.<br/>A little adventure for curious minds.</p>
+<p align="center"><a href="https://mind-quest-henna.vercel.app/"><strong>✨ Play MindQuest →</strong></a></p>
 
-## Features
+![MindQuest homepage with its magical adventure scene and quiz library](docs/images/homepage.jpg)
 
-- **50 free quizzes · 750 questions · 10 topics** on the homepage and a dedicated quiz library.
-- Pick a quiz, enter a nickname, choose an avatar, and play—no player signup needed.
-- Timed questions, friendly animations, sound effects, and clear answer explanations.
-- Automatic final-result popup, a per-quiz scoreboard, and saved result pages.
-- XP, virtual coins, levels, collectible avatars, and above-90% mastery trophies.
-- Creator accounts to publish quizzes, share codes, and see detailed participant results.
+## ✨ Features
 
-Guest progress stays in the same browser. Nicknames, best scores and levels appear
-on quiz scoreboards. Rewards are virtual.
+- 📚 **A world of quizzes** — 50 free quizzes, 750 questions and 10 topics to explore on the homepage or in the quiz library.
+- 🦊 **Pick a buddy & play** — enter a nickname, choose an avatar and jump straight into a quiz. No player signup needed.
+- ⏱️ **Learn through play** — timed questions, playful animations, sound effects and friendly answer explanations.
+- 🏆 **Celebrate every finish** — instant result popups, saved result pages and quiz scoreboards with player names, scores and levels.
+- 💎 **Grow your adventure** — collect XP, virtual coins, levels, unlockable avatars and mastery trophies for scores above 90%.
+- ✍️ **Create & share** — publish your own quizzes, share join codes and follow participant results from your creator dashboard.
+- 📱 **Play anywhere** — responsive screens, animated loading states and support for reduced motion.
 
-## Stack
+<sub>Guest progress stays in the same browser. Scoreboards show nicknames, best scores and levels. All rewards are virtual.</sub>
+
+## 🛠️ Built with
 
 Next.js 16 · React 19 · TypeScript · Tailwind CSS · Prisma 7 · Neon PostgreSQL · Better Auth
 
-Vercel runs the frontend **and** API. `apps/server` contains shared backend logic.
+---
 
-## Quick start
-
-Use **Node 24**, **pnpm 10.30.1** and a development PostgreSQL database.
-[Environment setup & Vercel deployment →](docs/deployment.md)
-
-```bash
-pnpm install --frozen-lockfile
-cp apps/web/.env.example apps/web/.env
-# Fill in the four environment variables using the setup guide.
-pnpm db:deploy
-pnpm db:seed
-pnpm dev
-```
-
-Open [localhost:3000](http://localhost:3000).
-
-[Architecture](ARCHITECTURE.md) · [Project plan](PROJECT_PLAN.md) · [Feature checklist](FEATURE_CHECKLIST.md)
+[Setup & deployment](docs/deployment.md) · [Architecture](ARCHITECTURE.md) · [Feature checklist](FEATURE_CHECKLIST.md)
