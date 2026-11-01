@@ -1,35 +1,56 @@
 "use client";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 export type GameCue = "select" | "lock" | "next" | "tick" | "correct" | "wrong" | "timeout" | "complete";
 type Note = [frequency: number, offset: number, duration: number];
-// Original synthesized effects: no downloads, external audio or background music.
+// Original effects: synthesized chimes plus a self-hosted wrong-answer bloop.
 const notes: Record<GameCue, Note[]> = {
   select: [[659.25, 0, .07], [987.77, .035, .09]], lock: [[392, 0, .08], [587.33, .075, .12]],
-  next: [[523.25, 0, .07], [659.25, .07, .1]], tick: [[880, 0, .045]],
+  next: [[523.25, 0, .07], [659.25, .07, .1]], tick: [[880, 0, .12]],
   correct: [[523.25, 0, .18], [659.25, .085, .2], [783.99, .17, .22], [1046.5, .28, .38], [1318.51, .44, .22], [1567.98, .54, .28]],
-  wrong: [[349.23, 0, .16], [293.66, .12, .2], [261.63, .26, .28]],
+  wrong: [[349.23, 0, .24], [293.66, .19, .26], [261.63, .4, .3]],
   timeout: [[392, 0, .15], [329.63, .15, .17], [261.63, .32, .27]],
   complete: [[523.25, 0, .15], [659.25, .15, .15], [783.99, .3, .15], [1046.5, .5, .45], [783.99, .5, .4], [659.25, .5, .4]],
 };
 // Keep the gesture-unlocked context across the popup → quiz client navigation.
 // Each mounted game owns its gain and sources, so leaving a quiz still stops it.
 let sharedContext: AudioContext | null = null;
+const audioListeners = new Set<() => void>();
+const notifyAudioState = () => { for (const listener of audioListeners) listener(); };
+const subscribeAudioState = (listener: () => void) => { audioListeners.add(listener); return () => { audioListeners.delete(listener); }; };
+const getAudioReady = () => sharedContext?.state === "running";
+const getServerAudioReady = () => false;
 export function unlockGameAudio(): AudioContext | null {
   if (typeof window === "undefined") return null;
   try {
-    if (!sharedContext || sharedContext.state === "closed") sharedContext = new AudioContext();
+    if (!sharedContext || sharedContext.state === "closed") {
+      sharedContext = new AudioContext();
+      sharedContext.addEventListener("statechange", notifyAudioState);
+      notifyAudioState();
+    }
     if (sharedContext.state === "suspended") void sharedContext.resume().catch(() => {});
     return sharedContext;
   } catch { return null; }
 }
 export function useGameAudio(enabled: boolean) {
+  const ready = useSyncExternalStore(subscribeAudioState, getAudioReady, getServerAudioReady);
   const enabledRef = useRef(enabled);
   const context = useRef<AudioContext | null>(null);
   const master = useRef<GainNode | null>(null);
   const active = useRef(new Set<OscillatorNode | AudioBufferSourceNode>());
   const clapNoise = useRef<AudioBuffer | null>(null);
+  const wrongAudio = useRef<HTMLAudioElement | null>(null);
+  const mediaPrimed = useRef(false);
+  const primePromise = useRef<Promise<void> | null>(null);
   const unlock = useCallback(() => {
     try {
+      if (!wrongAudio.current) { wrongAudio.current = new Audio("/sounds/wrong-answer.wav"); wrongAudio.current.preload = "auto"; }
+      const media = wrongAudio.current;
+      if (!mediaPrimed.current && !primePromise.current) {
+        media.muted = true;
+        primePromise.current = media.play().then(() => {
+          media.pause(); media.currentTime = 0; mediaPrimed.current = true;
+        }).catch(() => {}).finally(() => { media.muted = false; primePromise.current = null; });
+      }
       context.current = unlockGameAudio();
       if (context.current && !master.current) {
         master.current = context.current.createGain();
@@ -41,6 +62,7 @@ export function useGameAudio(enabled: boolean) {
   useEffect(() => {
     enabledRef.current = enabled;
     if (!enabled) {
+      wrongAudio.current?.pause();
       for (const oscillator of active.current) { try { oscillator.stop(); } catch { /* Already finished. */ } }
       active.current.clear();
       return;
@@ -53,6 +75,7 @@ export function useGameAudio(enabled: boolean) {
     return () => { document.removeEventListener("pointerdown", activate, true); document.removeEventListener("keydown", activate, true); };
   }, [enabled, unlock]);
   useEffect(() => () => {
+    wrongAudio.current?.pause();
     for (const source of active.current) { try { source.stop(); } catch { /* Already ended. */ } }
     active.current.clear();
     master.current?.disconnect();
@@ -60,6 +83,7 @@ export function useGameAudio(enabled: boolean) {
   }, []);
   const play = useCallback((cue: GameCue) => {
     if (document.hidden || !enabledRef.current) return;
+    if (cue === "next") wrongAudio.current?.pause();
     unlock();
     const audio = context.current;
     if (!audio || !master.current || (cue === "tick" && audio.state !== "running")) return;
@@ -104,7 +128,12 @@ export function useGameAudio(enabled: boolean) {
           oscillator.frequency.setValueAtTime(frequency, at);
           oscillator.frequency.exponentialRampToValueAtTime(frequency * .88, at + duration);
         }
-        gain.gain.setValueAtTime(.001, at); gain.gain.exponentialRampToValueAtTime(cue === "tick" ? .4 : cue === "wrong" || cue === "timeout" ? .85 : .65, at + .008);
+        const audibleCue = cue === "tick" || cue === "wrong" || cue === "timeout";
+        const peak = cue === "tick" ? .7 : audibleCue ? .85 : .65;
+        gain.gain.setValueAtTime(.001, at);
+        gain.gain.linearRampToValueAtTime(peak, at + .008);
+        // Hold the tick/bloop briefly: an immediate exponential decay was too quiet.
+        if (audibleCue) gain.gain.setValueAtTime(peak, at + duration * .55);
         gain.gain.exponentialRampToValueAtTime(.001, at + duration);
         oscillator.connect(gain); gain.connect(master.current);
         active.current.add(oscillator);
@@ -125,8 +154,17 @@ export function useGameAudio(enabled: boolean) {
       }
     } catch { /* Gameplay remains available if audio output fails. */ }
     };
+    if (cue === "wrong" && wrongAudio.current) {
+      const media = wrongAudio.current;
+      void (primePromise.current ?? Promise.resolve()).then(() => {
+        if (document.hidden || !enabledRef.current || context.current !== audio) return;
+        media.muted = false; media.volume = .85; media.currentTime = 0;
+        return media.play();
+      }).catch(() => { if (audio.state === "running") schedule(); });
+      return;
+    }
     if (audio.state === "suspended") void audio.resume().then(schedule).catch(() => {});
     else schedule();
   }, [unlock]);
-  return { play, unlock };
+  return { play, unlock, ready };
 }

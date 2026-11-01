@@ -10,8 +10,37 @@ test("timer, correct/wrong/timeout animations, real sound scheduling and mute wo
   const pool=new Pool({connectionString:process.env.DATABASE_URL});let creatorId:string|undefined;let ownerKey:string|undefined;
   // Observe actual Web Audio nodes without replacing their playback implementation.
   await page.addInitScript(()=>{
+    const wrongPlayback: { media: HTMLMediaElement | null; plays: number } = { media: null, plays: 0 };
+    Object.defineProperty(window, "__wrongPlayback", { value: wrongPlayback });
+    const playMedia = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function() {
+      if (this.src.includes("/sounds/wrong-answer.wav")) {
+        wrongPlayback.media = this;
+        if (!this.muted) wrongPlayback.plays++;
+      }
+      return playMedia.call(this);
+    };
     const frequencies:number[]=[];
     Object.defineProperty(window,"__gameFrequencies",{value:frequencies});
+    const levels: number[] = [];
+    Object.defineProperty(window, "__gameLevels", { value: levels });
+    const createGain = AudioContext.prototype.createGain;
+    AudioContext.prototype.createGain = function() {
+      const gain = createGain.call(this); const connect = gain.connect.bind(gain);
+      gain.connect = ((destination: AudioNode) => {
+        const result = connect(destination);
+        if (destination === this.destination) {
+          const analyser = this.createAnalyser(); analyser.fftSize = 256; connect(analyser);
+          const samples = new Float32Array(analyser.fftSize);
+          setInterval(() => {
+            analyser.getFloatTimeDomainData(samples);
+            levels.push(Math.sqrt(samples.reduce((sum, sample) => sum + sample * sample, 0) / samples.length));
+          }, 10);
+        }
+        return result;
+      }) as typeof gain.connect;
+      return gain;
+    };
     const claps:number[]=[];Object.defineProperty(window,"__gameClaps",{value:claps});
     const createBuffer=AudioContext.prototype.createBufferSource;
     AudioContext.prototype.createBufferSource=function(){const source=createBuffer.call(this);const start=source.start.bind(source);source.start=(at=0,offset=0,duration?:number)=>{claps.push(at);if(duration===undefined)start(at,offset);else start(at,offset,duration);};return source;};
@@ -38,6 +67,7 @@ test("timer, correct/wrong/timeout animations, real sound scheduling and mute wo
     await page.goto(`/play/${round.id}`);await expect(page.getByRole("timer")).toBeVisible();
     await page.getByRole("heading",{name:"What is 2 + 3?",exact:true}).click();
     await expect.poll(async()=>(await sounds()).filter(frequency=>frequency===880).length).toBeGreaterThanOrEqual(2);
+    await expect.poll(() => page.evaluate(() => Math.max(0, ...Reflect.get(window, "__gameLevels") as number[]))).toBeGreaterThan(.03);
     await expect(page.getByRole("timer")).not.toHaveClass(/is-urgent/);
     await page.getByRole("button",{name:/^[ABCD] 5$/}).click();
     await page.getByRole("button",{name:"Lock in answer",exact:true}).click();
@@ -58,16 +88,23 @@ test("timer, correct/wrong/timeout animations, real sound scheduling and mute wo
     expect(timeout.feedback?.timedOut).toBe(true);expect(timeout.reviews).toHaveLength(2);
     await expect.poll(async()=>(await sounds()).some(frequency=>Math.abs(frequency-261.63)<.01)).toBe(true);
     await page.getByRole("button",{name:"Next discovery",exact:true}).click();
-    const beforeWrong = (await sounds()).length;
     await page.getByRole("button",{name:/^[ABCD] Venus$/}).click();await page.getByRole("button",{name:"Lock in answer",exact:true}).click();
     await expect(page.getByRole("heading",{name:"A new thing learned."})).toBeVisible();
-    await expect.poll(async() => (await sounds()).slice(beforeWrong).some((frequency) => Math.abs(frequency - 349.23) < .01)).toBe(true);
+    await expect.poll(() => page.evaluate(() => {
+      const playback = Reflect.get(window, "__wrongPlayback") as { media: HTMLMediaElement | null; plays: number };
+      return playback.plays > 0 && Boolean(playback.media && !playback.media.muted && playback.media.volume > .5 && playback.media.currentTime > .03);
+    })).toBe(true);
+    await expect(page.getByText("Knowledge grows with every answer, even the unexpected ones.", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Progress saved after every answer", { exact: true })).toHaveCount(0);
     await page.getByRole("button",{name:"Next discovery",exact:true}).click();
     await page.getByRole("button",{name:"Mute game sounds",exact:true}).click();
     const before=(await sounds()).length;const clapsBefore=(await applause()).length;
+    const mediaBefore = await page.evaluate(() => Reflect.get(window, "__wrongPlayback").plays as number);
     await page.getByRole("button",{name:/^[ABCD] Fox$/}).click();await page.getByRole("button",{name:"Lock in answer",exact:true}).click();
     await expect(page.getByRole("heading",{name:"A new thing learned."})).toBeVisible();
     expect((await sounds()).length).toBe(before);expect((await applause()).length).toBe(clapsBefore);
+    expect(await page.evaluate(() => Reflect.get(window, "__wrongPlayback").plays as number)).toBe(mediaBefore);
+    expect(await page.evaluate(() => Reflect.get(window, "__wrongPlayback").media.paused as boolean)).toBe(true);
     await expect(page.locator(".celebration-learning")).toBeVisible();
     await expect(page.locator(".celebration-learning .celebration-buddy")).toHaveText("😔");
     await expect(page.getByText("Oops… not this one",{exact:true})).toBeVisible();
