@@ -25,7 +25,7 @@ test("quiz actions stay in the viewport with long questions and explanations on 
   try {
     const signup = await page.request.post("/api/auth/sign-up/email", { data: { name: "Viewport Creator", email: `viewport-${Date.now()}@example.com`, password: "Test-password-42!" }, headers: { Origin: "http://localhost:3000" } });
     expect(signup.ok()).toBe(true); creatorId = (await signup.json()).user.id;
-    const created = await page.request.post("/api/quizzes", { data: { title: "A lovely long question adventure", timed: false, questions: [{ prompt: "Which answer is kind? " + "Think about the words you would use with a new friend. ".repeat(8), options: ["answer zero", "answer one", "answer two", "answer three"].map((label) => `${label}: ${"A friendly story with lots of words. ".repeat(5)}`), correctIndex: 0, explanation: "A kind word makes someone feel welcome. ".repeat(25) }] } });
+    const created = await page.request.post("/api/quizzes", { data: { title: "A lovely long question adventure", timed: false, questions: [{ prompt: "Which answer is kind? " + "Think about the words you would use with a new friend. ".repeat(8), options: ["answer zero", "answer one", "answer two", "answer three"].map((label) => `${label}: ${"A friendly story with lots of words. ".repeat(5)}`), correctIndex: 0, explanation: "A kind word makes someone feel welcome. ".repeat(25) }, { prompt: "What comes after one?", options: ["Two", "Three", "Four", "Five"], correctIndex: 0, explanation: "Two comes after one." }] } });
     expect(created.ok()).toBe(true); const quiz = await created.json();
     const joined = await page.request.post("/api/quizzes/join", { data: { code: quiz.code, name: "Viewport Explorer", avatar: "owl" } });
     expect(joined.ok()).toBe(true); const { attempt } = await joined.json();
@@ -36,7 +36,7 @@ test("quiz actions stay in the viewport with long questions and explanations on 
     await page.getByRole("button", { name: /answer zero:/ }).click();
     await page.getByRole("button", { name: "Lock in answer", exact: true }).click();
     await expect(page.getByRole("heading", { name: "A brilliant discovery!" })).toBeVisible();
-    for (const size of sizes) { await page.setViewportSize(size); await actionsFit(page, "Reveal my results"); }
+    for (const size of sizes) { await page.setViewportSize(size); await actionsFit(page, "Next discovery"); }
     await page.setViewportSize({ width: 390, height: 844 });
     if (process.env.CAPTURE_QUIZ_PREVIEW === "1") await page.screenshot({ path: "/tmp/mindquest-compact-mobile.png" });
   } finally {

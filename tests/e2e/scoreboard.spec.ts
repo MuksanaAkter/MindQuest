@@ -42,7 +42,7 @@ test("quiz scoreboard ranks unique completed players, paginates, and exposes onl
     const later: QuizScoreboard = await (await page.request.get(`/api/quizzes/${quiz.id}/scoreboard?page=1`)).json();
     expect(later.entries).toHaveLength(5); expect(later.entries[0].rank).toBe(31); expect(later.nextPage).toBeNull();
     expect((await page.request.get(`/api/quizzes/${quiz.id}/scoreboard?page=-1`)).status()).toBe(400);
-    await page.goto(`/play/${round.id}`);
+    await page.goto(`/results/${round.id}`);
     await expect(page.getByRole("region", { name: "Quiz scoreboard", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Open quiz scoreboard", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Quiz scoreboard", exact: true }); await expect(dialog).toBeVisible();

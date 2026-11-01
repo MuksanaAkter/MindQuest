@@ -1,87 +1,43 @@
-# MindQuest 🦉
+<p align="center">
+  <img src="apps/web/src/app/icon.svg" alt="MindQuest logo" width="80" />
+</p>
 
-A playful quiz adventure for curious kids. Pick a quest, choose a name and avatar,
-and learn through colourful questions, friendly feedback, and little rewards.
+<h1 align="center">MindQuest</h1>
+<p align="center">Learn. Play. Level up. A little adventure for curious minds.</p>
+<p align="center"><a href="https://mind-quest-henna.vercel.app/"><strong>Play MindQuest →</strong></a></p>
 
-**[Play MindQuest →](https://mind-quest-henna.vercel.app/)**
+## Features
 
-## What’s inside
+- **50 free quizzes · 750 questions · 10 topics** on the homepage and a dedicated quiz library.
+- Pick a quiz, enter a nickname, choose an avatar, and play—no player signup needed.
+- Timed questions, friendly animations, sound effects, and clear answer explanations.
+- Automatic final-result popup, a per-quiz scoreboard, and saved result pages.
+- XP, virtual coins, levels, collectible avatars, and above-90% mastery trophies.
+- Creator accounts to publish quizzes, share codes, and see detailed participant results.
 
-- 50 free quizzes and 750 questions across 10 topics.
-- Click any quiz card to enter your name, pick a buddy, and start playing.
-- 15-second questions, cheerful sound effects, and green/red answer animations.
-- Saved attempts, XP, virtual coins, level rewards, avatars, and mastery trophies.
-- Per-quiz scoreboards with nicknames, avatars, levels, and best completed scores.
-- Creator accounts to publish quizzes, share join codes, and view private results.
-
-Players can join without an account. Guest progress belongs to the current browser;
-clearing its cookies starts a new identity. Rewards are virtual.
+Guest progress stays in the same browser. Nicknames, best scores and levels appear
+on quiz scoreboards. Rewards are virtual.
 
 ## Stack
 
-Next.js 16 · React 19 · TypeScript · Tailwind CSS · Framer Motion ·
-Prisma 7 · PostgreSQL (Neon) · Better Auth · Zustand
+Next.js 16 · React 19 · TypeScript · Tailwind CSS · Prisma 7 · Neon PostgreSQL · Better Auth
 
-`apps/web` serves both the UI and API routes on Vercel. `apps/server` contains the
-shared backend logic; it does **not** need a separate Render server.
+Vercel runs the frontend **and** API. `apps/server` contains shared backend logic.
 
-## Run locally
+## Quick start
 
-Use **Node 24** and **pnpm 10.30.1**. Run commands from the repository root:
+Use **Node 24**, **pnpm 10.30.1** and a development PostgreSQL database.
+[Environment setup & Vercel deployment →](docs/deployment.md)
 
 ```bash
-corepack enable
 pnpm install --frozen-lockfile
 cp apps/web/.env.example apps/web/.env
-openssl rand -base64 32
-```
-
-Set these values in `apps/web/.env`:
-
-```dotenv
-DATABASE_URL="your-pooled-postgres-url"
-DATABASE_URL_UNPOOLED="your-direct-postgres-url"
-BETTER_AUTH_SECRET="your-generated-secret"
-BETTER_AUTH_URL="http://localhost:3000"
-```
-
-Then prepare your database and start the app:
-
-```bash
+# Fill in the four environment variables using the setup guide.
 pnpm db:deploy
 pnpm db:seed
 pnpm dev
 ```
 
-Open [localhost:3000](http://localhost:3000). Use a development database locally.
-`db:seed` safely inserts missing library quizzes; it preserves existing player data.
+Open [localhost:3000](http://localhost:3000).
 
-## Deploy to Vercel
-
-1. Import the repository as **Next.js** with Root Directory **`apps/web`** and Node **24.x**.
-2. Enable access to files outside the Root Directory.
-3. Install command: `cd ../.. && pnpm install --frozen-lockfile`.
-4. Build command: `cd ../.. && pnpm build`. Leave Output Directory at its default.
-5. Set the four environment variables above in Vercel. Use your live HTTPS origin
-   for `BETTER_AUTH_URL` and a private random secret of at least 32 characters.
-6. From a terminal configured with the target database URLs, run `pnpm db:deploy`
-   and, for a new database, `pnpm db:seed`. Deploy or redeploy the app.
-
-Neon’s pooled URL is for app requests; its direct URL is for migrations. Never put
-secrets in `NEXT_PUBLIC_*` variables or commit `.env` files. Run production migrations
-as a release step, outside the build. `/api/health` checks app liveness only.
-
-## Checks
-
-```bash
-pnpm typecheck
-pnpm lint
-pnpm test --runInBand
-pnpm build
-```
-
-Browser tests: `pnpm exec playwright install chromium`, then `pnpm test:e2e`.
-Use `RUN_DB_E2E=1 pnpm test:e2e` only with a disposable migrated and seeded database.
-
-More details: [Architecture](ARCHITECTURE.md) · [Project plan](PROJECT_PLAN.md) ·
-[Feature checklist](FEATURE_CHECKLIST.md)
+[Architecture](ARCHITECTURE.md) · [Project plan](PROJECT_PLAN.md) · [Feature checklist](FEATURE_CHECKLIST.md)

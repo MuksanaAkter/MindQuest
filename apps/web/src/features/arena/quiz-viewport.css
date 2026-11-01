@@ -1,5 +1,5 @@
 /* One dynamic viewport. Only long question/explanation content scrolls; actions stay visible. */
-.arena-shell.quiz-viewport{height:100dvh;min-height:0;overflow:hidden;background:linear-gradient(#fff8ee55,#f6efff33),url('/images/quiz-meadow.webp') center / cover no-repeat}
+.arena-shell.playful-arena.quiz-viewport{height:100dvh;min-height:0;overflow:hidden;background:linear-gradient(#fff8ee55,#f6efff33),url('/images/quiz-meadow.webp') center / cover no-repeat}
 .quiz-viewport .arena-content{height:100%;min-height:0;display:flex;flex-direction:column}
 .quiz-viewport .arena-topbar{flex:0 0 auto;min-height:52px;height:52px;padding-block:7px}
 .participant-shell.quiz-viewport .arena-main,.quiz-viewport .arena-main{display:flex;flex-direction:column;flex:1;min-height:0;width:100%;max-width:1060px;padding:12px 20px 8px}

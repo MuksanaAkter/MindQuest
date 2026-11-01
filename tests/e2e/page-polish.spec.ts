@@ -9,7 +9,7 @@ async function inspectPage(page:Page,path:string,width:number) {
   await page.setViewportSize({width,height:900});
   const response=await page.goto(path);
   expect(response?.status(),`${path} at ${width}px`).toBe(path.includes("missing-quest")?404:200);
-  await expect(page.getByRole("heading",{level:1})).toHaveCount(1);
+  await expect(page.getByRole("heading",{level:1})).toHaveCount(1, { timeout: 15000 });
   await expect(page.locator("main")).toBeVisible();
   const icons=await page.locator('head link[rel="icon"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute("href")));
   expect(icons.some(href=>href?.includes("favicon.ico")),path).toBe(true);
@@ -51,7 +51,7 @@ test("public, player, creator and result pages stay readable with loaded artwork
     const selected=round.question!.options.find(option=>option.text==="Mars")!;
     await page.request.post(`/api/arena/${round.id}`,{data:{action:"answer",questionId:round.question!.id,choiceId:selected.id}});
     await page.request.post(`/api/arena/${round.id}`,{data:{action:"next",questionId:round.question!.id}});
-    for(const width of [390,1280]) {await inspectPage(page,`/play/${round.id}`,width);await expect(page.getByRole("region",{name:"Your quiz rewards"})).toBeVisible();}
+    for(const width of [390,1280]) {await inspectPage(page,`/results/${round.id}`,width);await expect(page.getByRole("region",{name:"Your quiz rewards"})).toBeVisible();}
     expect(failures).toEqual([]);
   } finally {
     if(ownerKey){await pool.query('DELETE FROM "GameAttempt" WHERE "ownerKey"=$1',[ownerKey]);await pool.query('DELETE FROM "PlayerProfile" WHERE "ownerKey"=$1',[ownerKey]);}

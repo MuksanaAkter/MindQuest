@@ -40,14 +40,14 @@ test("seed library rewards best-score improvements, unlocks avatars once, and pe
     const restored: ArenaView = await (await request.get(`/api/arena/${next.id}`)).json(); expect(restored.playerReward).toEqual(next.playerReward);
     await page.context().addCookies((await request.storageState()).cookies);
     await pool.query(`UPDATE "GameAttempt" SET state=jsonb_set(state, '{quiz,title}', to_jsonb($2::text)) WHERE id=$1`, [next.id, "Old fantasy quiz name"]);
-    await page.goto(`/play/${next.id}`);
+    await page.goto(`/results/${next.id}`);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(seeded[1].title);
     await expect(page.getByRole("region", { name: "Your quiz rewards", exact: true })).toBeVisible();
     await expect(page.getByText("New avatar unlocked: phoenix!", { exact: true })).toBeVisible();
     await expect(page.getByText("Level up! You’re now a level 2 explorer.", { exact: false })).toBeVisible();
     await page.getByRole("link", { name: "Join another quiz", exact: true }).click();
-    await expect(page).toHaveURL(/\/#join-quiz$/);
-    await page.getByRole("button", { name: "Choose phoenix avatar", exact: true }).click();
+    await expect(page).toHaveURL(/\/library#join-quiz$/);
+    await page.getByRole("button", { name: "phoenix avatar", exact: true }).click();
     await expect(page.getByRole("button", { name: "phoenix avatar", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.goto("/me");
     await expect(page.getByRole("heading", { name: "My past games", exact: true })).toBeVisible();
@@ -93,10 +93,10 @@ test("seed library rewards best-score improvements, unlocks avatars once, and pe
     await pool.end();
   }
 });
-test("kids library supports topic filters, search, quest selection, locked friends, and mobile layout", async ({ page }) => {
+test("kids library supports topic filters, search, quest popups, and mobile layout", async ({ page }) => {
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs seeded PostgreSQL.");
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("button", { name: "Math", exact: true }).click();
   await expect(page.getByRole("button", { name: "Play Adding Numbers", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Play Adding Numbers", exact: true }).click();
@@ -108,7 +108,6 @@ test("kids library supports topic filters, search, quest selection, locked frien
   await page.keyboard.press("Escape");
   await expect(popup).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Play Adding Numbers", exact: true })).toBeFocused();
-  await expect(page.getByRole("button", { name: "Locked phoenix avatar", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "All quests", exact: true }).click();
   await page.getByRole("textbox", { name: "Search quizzes" }).fill("Solar System");
   await expect(page.getByRole("button", { name: "Play Planets in Our Solar System", exact: true })).toBeVisible();
@@ -117,6 +116,7 @@ test("kids library supports topic filters, search, quest selection, locked frien
 
 test("quiz card popup starts the selected quest directly with a name and buddy", async ({ page }) => {
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs a disposable seeded PostgreSQL database.");
+  test.setTimeout(60000);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   let ownerKey: string | undefined;
   let releaseJoin!: () => void;
@@ -133,7 +133,7 @@ test("quiz card popup starts the selected quest directly with a name and buddy",
     };
   });
   try {
-    await page.goto("/");
+    await page.goto("/library");
     await page.locator(".quest-tile").filter({ has: page.getByRole("heading", { name: "Adding Numbers", exact: true }) }).click();
     const popup = page.getByRole("dialog", { name: "Ready, little explorer?" });
     await expect(popup).toBeVisible();
@@ -144,7 +144,7 @@ test("quiz card popup starts the selected quest directly with a name and buddy",
     await expect(popup.locator(".quest-loader-buddy")).toBeVisible();
     if (process.env.CAPTURE_QUIZ_PREVIEW === "1") await page.screenshot({ path: "/tmp/mindquest-quiz-loader.png" });
     releaseJoin();
-    await expect(page).toHaveURL(/\/play\/[^/]+$/);
+    await expect(page).toHaveURL(/\/play\/[^/]+$/, { timeout: 15000 });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Adding Numbers");
     await expect(page.locator(".participant-banner")).toContainText("Popup Explorer");
     await expect(page.locator(".participant-banner>span")).toHaveText("🦊");

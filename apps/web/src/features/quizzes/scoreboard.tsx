@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw, Trophy, X } from "lucide-react";
 import { AVATAR_EMOJI, type QuizScoreboard as Scores } from "@mindquest/server/quizzes/contracts";
+import { QuestLoader } from "@/components/quest-loader";
 import { quizApi } from "./api";
 import "./scoreboard.css";
 
@@ -32,7 +33,7 @@ export function QuizScoreboard({ quizId }: { quizId: string }) {
     <div className="scoreboard-heading"><div><span className="scoreboard-icon"><Trophy size={21}/></span><div><h2>Quiz scoreboard</h2><p>Your best finished run counts</p></div></div><button type="button" className="scoreboard-refresh" disabled={pending} aria-label="Refresh scoreboard" onClick={() => void load()}><RefreshCw size={16} className={pending ? "is-spinning" : ""}/></button></div>
     <div className="scoreboard-caption"><span>{scores ? `${scores.total} ${scores.total === 1 ? "explorer" : "explorers"}` : "Gathering explorers…"}</span><span>Score · Level</span></div>
     {error && <p className="scoreboard-message" role="alert">{error}</p>}
-    {!scores && pending ? <p className="scoreboard-message" role="status">Opening the scoreboard…</p> : scores && !scores.entries.length ? <p className="scoreboard-message">Be the first to finish this quiz! 🌟</p> : null}
+    {!scores && pending ? <QuestLoader compact label="Opening the scoreboard…"/> : scores && !scores.entries.length ? <p className="scoreboard-message">Be the first to finish this quiz! 🌟</p> : null}
     {scores && scores.entries.length > 0 && <div className="scoreboard-scroll" tabIndex={0} role="region" aria-label="Ranked explorers"><ol>{scores.entries.map((entry) => <li key={entry.rank} className={entry.isYou ? "scoreboard-you" : ""}><span className={`scoreboard-rank rank-${entry.rank}`}>{entry.rank <= 3 ? ["🥇", "🥈", "🥉"][entry.rank - 1] : entry.rank}</span><span className="scoreboard-avatar" aria-hidden="true">{AVATAR_EMOJI[entry.avatar]}</span><div className="scoreboard-player"><strong>{entry.name}{entry.isYou && <em>You</em>}</strong><small>Level {entry.level}</small></div><strong className="scoreboard-score">{entry.score.toLocaleString()}<small>points</small></strong></li>)}</ol>{scores.nextPage !== null && <button className="scoreboard-more" disabled={pending} onClick={() => void load(scores.nextPage!)}>{pending ? "Loading…" : "More explorers"}</button>}</div>}
   </section>;
 }

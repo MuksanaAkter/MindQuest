@@ -34,7 +34,7 @@ test("public landing leads to matching auth pages and guest Arena", async ({ pag
   await page.getByRole("link", { name: "Creator login", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome back, explorer.");
   await page.getByRole("link", { name: "Join a quiz without an account", exact: true }).click();
-  await expect(page).toHaveURL(/\/#join-quiz$/);
+  await expect(page).toHaveURL(/\/library#join-quiz$/);
   await expect(page.getByRole("heading", { name: "Ready to play?" })).toBeVisible();
 });
 

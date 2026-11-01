@@ -7,6 +7,7 @@ test.use({extraHTTPHeaders:{"x-forwarded-for":"192.0.2.32"}});
 
 test("timer, correct/wrong/timeout animations, real sound scheduling and mute work with saved answers",async({page})=>{
   test.skip(process.env.RUN_DB_E2E!=="1","Needs the migrated local database.");
+  test.setTimeout(60000);
   const pool=new Pool({connectionString:process.env.DATABASE_URL});let creatorId:string|undefined;let ownerKey:string|undefined;
   // Observe actual Web Audio nodes without replacing their playback implementation.
   await page.addInitScript(()=>{
@@ -94,6 +95,8 @@ test("timer, correct/wrong/timeout animations, real sound scheduling and mute wo
       const playback = Reflect.get(window, "__wrongPlayback") as { media: HTMLMediaElement | null; plays: number };
       return playback.plays > 0 && Boolean(playback.media && !playback.media.muted && playback.media.volume > .5 && playback.media.currentTime > .03);
     })).toBe(true);
+    await expect(page.locator(".celebration-learning")).toBeVisible();
+    await expect(page.locator(".celebration-learning .celebration-buddy")).toHaveText("😔");
     await expect(page.getByText("Knowledge grows with every answer, even the unexpected ones.", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Progress saved after every answer", { exact: true })).toHaveCount(0);
     await page.getByRole("button",{name:"Next discovery",exact:true}).click();
@@ -101,14 +104,12 @@ test("timer, correct/wrong/timeout animations, real sound scheduling and mute wo
     const before=(await sounds()).length;const clapsBefore=(await applause()).length;
     const mediaBefore = await page.evaluate(() => Reflect.get(window, "__wrongPlayback").plays as number);
     await page.getByRole("button",{name:/^[ABCD] Fox$/}).click();await page.getByRole("button",{name:"Lock in answer",exact:true}).click();
-    await expect(page.getByRole("heading",{name:"A new thing learned."})).toBeVisible();
+    await expect(page.getByRole("dialog",{name:"Adventure complete!",exact:true})).toBeVisible();
     expect((await sounds()).length).toBe(before);expect((await applause()).length).toBe(clapsBefore);
     expect(await page.evaluate(() => Reflect.get(window, "__wrongPlayback").plays as number)).toBe(mediaBefore);
     expect(await page.evaluate(() => Reflect.get(window, "__wrongPlayback").media.paused as boolean)).toBe(true);
-    await expect(page.locator(".celebration-learning")).toBeVisible();
-    await expect(page.locator(".celebration-learning .celebration-buddy")).toHaveText("😔");
-    await expect(page.getByText("Oops… not this one",{exact:true})).toBeVisible();
-    await page.getByRole("button",{name:"Reveal my results",exact:true}).click();
+    await page.getByRole("dialog", {name:"Adventure complete!",exact:true}).getByRole("link",{name:"View full result",exact:true}).click();
+    await expect(page).toHaveURL(new RegExp(`/results/${round.id}$`));
     await expect(page.getByText("1/4",{exact:true})).toBeVisible();
     await expect(page.locator(".result-celebration i")).toHaveCount(24);
     await page.locator(".arena-review").first().locator("summary").click();

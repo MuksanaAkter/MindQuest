@@ -4,6 +4,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { publicCopy as c } from "@/features/public/copy";
+import { QuestSpinner } from "./quest-loader";
 import { authClient } from "@/lib/auth-client";
 const subscribe = () => () => {};
 const credentials = z.object({ email: z.email(), password: z.string().min(8).max(128) });
@@ -23,22 +24,21 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setPending(true);
     try {
       const result = signup ? await authClient.signUp.email({ ...parsed.data, name }) : await authClient.signIn.email(parsed.data);
-      if (result.error) { setError(result.error.message ?? c.failed); return; }
+      if (result.error) { setError(result.error.message ?? c.failed); setPending(false); return; }
       // A fresh document clears session-bound client caches after authentication.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/dashboard");
-    } catch { setError(c.unavailable); }
-    finally { setPending(false); }
+    } catch { setError(c.unavailable); setPending(false); }
   }
-  return <form onSubmit={submit} className="world-auth-form"><fieldset disabled={!hydrated || pending}>
+  return <form onSubmit={submit} className="world-auth-form" aria-busy={pending}><fieldset disabled={!hydrated || pending}>
     {signup && <label className="world-auth-label">{c.name}<input name="name" required minLength={2} maxLength={80} autoComplete="name" className="world-auth-input" /></label>}
     <label className="world-auth-label">{c.email}<input name="email" type="email" required autoComplete="email" className="world-auth-input" /></label>
     <label className="world-auth-label" htmlFor="auth-password">{c.password}</label><div className="auth-password-wrap"><input id="auth-password" name="password" type={showPassword ? "text" : "password"} required minLength={8} maxLength={128} autoComplete={signup ? "new-password" : "current-password"} className="world-auth-input" /><button type="button" className="auth-password-toggle" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>
     {signup && <p className="auth-hint">{c.passwordHint}</p>}
     {error && <p role="alert" className="auth-error">{error}</p>}
-    <button disabled={pending || !hydrated} className="world-button">{pending ? c.pending : signup ? c.signupButton : c.loginButton}<ArrowRight size={15} /></button>
+    <button disabled={pending || !hydrated} className="world-button">{pending && <QuestSpinner/>}{pending ? c.pending : signup ? c.signupButton : c.loginButton}<ArrowRight size={15} /></button>
     <p className="auth-switch">{signup ? c.existing : c.new}<Link href={signup ? "/login" : "/signup"}>{signup ? c.login : c.create}</Link></p>
-    <Link href="/#join-quiz" className="auth-guest-link">{c.guest}<ArrowRight size={12} /></Link>
+    <Link href="/library#join-quiz" className="auth-guest-link">{c.guest}<ArrowRight size={12} /></Link>
     <p className="auth-hint text-center !mt-3">{c.guestHint}</p>
   </fieldset></form>;
 }

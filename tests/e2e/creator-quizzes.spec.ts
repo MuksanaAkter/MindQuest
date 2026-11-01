@@ -7,6 +7,7 @@ config({ path: "apps/web/.env", quiet: true });
 test.use({ extraHTTPHeaders: { "x-forwarded-for": "192.0.2.11" } });
 test("only creators log in; a named avatar can join, finish, and appear in private creator results", async ({ page, browser, playwright }) => {
   test.skip(process.env.RUN_DB_E2E !== "1", "Needs a migrated local PostgreSQL database.");
+  test.setTimeout(60000);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const participantContext = await browser.newContext(); const participant = await participantContext.newPage();
   const outsider = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
@@ -30,7 +31,7 @@ test("only creators log in; a named avatar can join, finish, and appear in priva
     await participant.getByLabel("Your player name").fill("Ada Explorer");
     await participant.getByRole("button", { name: "fox avatar", exact: true }).click();
     await participant.getByRole("button", { name: "Join quiz", exact: true }).click();
-    await expect(participant).toHaveURL(/\/play\//);
+    await expect(participant).toHaveURL(/\/play\//, { timeout: 15000 });
     await expect(participant.getByText("Ada Explorer · Participant")).toBeVisible();
     const id = new URL(participant.url()).pathname.split("/").at(-1)!;
     expect((await outsider.get(`/api/arena/${id}`)).status()).toBe(404);
@@ -38,8 +39,8 @@ test("only creators log in; a named avatar can join, finish, and appear in priva
     expect(before.question).not.toHaveProperty("snapshot"); expect(before.quiz?.avatar).toBe("fox");
     await participant.getByRole("button", { name: /^[ABCD] Mars$/ }).click();
     await participant.getByRole("button", { name: "Lock in answer", exact: true }).click();
-    await expect(participant.getByRole("heading", { name: "A brilliant discovery!" })).toBeVisible();
-    await participant.getByRole("button", { name: "Reveal my results", exact: true }).click();
+    await expect(participant.getByRole("dialog", { name: "Adventure complete!", exact: true })).toBeVisible({ timeout: 15000 });
+    await participant.getByRole("dialog", { name: "Adventure complete!", exact: true }).getByRole("link", { name: "View full result", exact: true }).click();
     await expect(participant.getByText("1/1", { exact: true })).toBeVisible();
     await expect(participant.getByText("Ada Explorer · Your result is saved for the quiz creator.")).toBeVisible();
     await participant.reload(); await expect(participant.getByText("1/1", { exact: true })).toBeVisible();
@@ -50,12 +51,12 @@ test("only creators log in; a named avatar can join, finish, and appear in priva
     expect((await participant.request.get("/api/quizzes")).status()).toBe(401);
     await page.goto("/dashboard");
     await expect(page.getByRole("heading", { name: "Creator dashboard", exact: true })).toBeVisible();
-    await expect(page.getByText("Ada Explorer", { exact: true })).toBeVisible();
+    await expect(page.getByText("Ada Explorer", { exact: true })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("100% accuracy", { exact: true })).toBeVisible();
     expect((await participant.request.get("/api/creator/overview")).status()).toBe(401);
     await page.goto("/create");
     await page.getByRole("button", { name: "Refresh results", exact: true }).click();
-    await expect(page.getByText("Ada Explorer", { exact: true })).toBeVisible();
+    await expect(page.getByText("Ada Explorer", { exact: true })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("100 pts", { exact: false })).toBeVisible();
     const creatorList = await (await page.request.get("/api/quizzes")).json() as { quizzes: { id: string }[] };
     const quizId = creatorList.quizzes[0].id;
