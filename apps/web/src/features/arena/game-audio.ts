@@ -4,10 +4,10 @@ export type GameCue = "select" | "lock" | "next" | "tick" | "correct" | "wrong" 
 type Note = [frequency: number, offset: number, duration: number];
 // Original synthesized effects: no downloads, external audio or background music.
 const notes: Record<GameCue, Note[]> = {
-  select: [[440, 0, .065]], lock: [[392, 0, .08], [587.33, .075, .12]],
+  select: [[659.25, 0, .07], [987.77, .035, .09]], lock: [[392, 0, .08], [587.33, .075, .12]],
   next: [[523.25, 0, .07], [659.25, .07, .1]], tick: [[880, 0, .045]],
-  correct: [[523.25, 0, .15], [659.25, .1, .16], [783.99, .2, .17], [1046.5, .33, .28]],
-  wrong: [[329.63, 0, .16], [261.63, .15, .25]],
+  correct: [[523.25, 0, .18], [659.25, .085, .2], [783.99, .17, .22], [1046.5, .28, .38], [1318.51, .44, .22], [1567.98, .54, .28]],
+  wrong: [[349.23, 0, .16], [293.66, .12, .2], [261.63, .26, .28]],
   timeout: [[392, 0, .15], [329.63, .15, .17], [261.63, .32, .27]],
   complete: [[523.25, 0, .15], [659.25, .15, .15], [783.99, .3, .15], [1046.5, .5, .45], [783.99, .5, .4], [659.25, .5, .4]],
 };
@@ -70,8 +70,8 @@ export function useGameAudio(enabled: boolean) {
           filter.type = "highpass"; filter.frequency.value = 900; filter.Q.value = .65;
           const at = audio.currentTime + .08 + i * .17 + (i % 2) * .025;
           gain.gain.setValueAtTime(.001, at);
-          gain.gain.exponentialRampToValueAtTime(1.65, at + .004);
-          gain.gain.exponentialRampToValueAtTime(.45, at + .035);
+          gain.gain.exponentialRampToValueAtTime(.85, at + .004);
+          gain.gain.exponentialRampToValueAtTime(.25, at + .035);
           gain.gain.exponentialRampToValueAtTime(.001, at + .17);
           source.connect(filter); filter.connect(gain); gain.connect(master.current);
           active.current.add(source);
@@ -81,15 +81,31 @@ export function useGameAudio(enabled: boolean) {
       }
       for (const [frequency, offset, duration] of notes[cue]) {
         const oscillator = audio.createOscillator(); const gain = audio.createGain();
-        oscillator.type = cue === "tick" ? "sine" : "triangle";
+        oscillator.type = cue === "tick" || cue === "correct" || cue === "complete" ? "sine" : "triangle";
         oscillator.frequency.value = frequency;
         const at = audio.currentTime + offset;
+        if (cue === "wrong" || cue === "timeout") {
+          oscillator.frequency.setValueAtTime(frequency, at);
+          oscillator.frequency.exponentialRampToValueAtTime(frequency * .88, at + duration);
+        }
         gain.gain.setValueAtTime(.001, at); gain.gain.exponentialRampToValueAtTime(cue === "tick" ? .25 : .65, at + .008);
         gain.gain.exponentialRampToValueAtTime(.001, at + duration);
         oscillator.connect(gain); gain.connect(master.current);
         active.current.add(oscillator);
         oscillator.onended = () => { active.current.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
         oscillator.start(at); oscillator.stop(at + duration + .015);
+        if (cue === "correct" || cue === "complete") {
+          // A quiet bell overtone makes the melody sparkle without loud buzzers.
+          const bell = audio.createOscillator(); const shimmer = audio.createGain();
+          bell.type = "sine"; bell.frequency.value = frequency * 2;
+          shimmer.gain.setValueAtTime(.001, at);
+          shimmer.gain.exponentialRampToValueAtTime(.13, at + .006);
+          shimmer.gain.exponentialRampToValueAtTime(.001, at + duration * .65);
+          bell.connect(shimmer); shimmer.connect(master.current);
+          active.current.add(bell);
+          bell.onended = () => { active.current.delete(bell); bell.disconnect(); shimmer.disconnect(); };
+          bell.start(at); bell.stop(at + duration + .015);
+        }
       }
     } catch { /* Gameplay remains available if audio output fails. */ }
   }, []);

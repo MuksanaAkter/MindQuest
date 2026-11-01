@@ -7,3 +7,6 @@
 .passport-open{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#d8b5f4;margin-top:15px}.passport-open:hover{color:#f4d29b}
 
 .reward-trophy{margin:22px 0;padding:22px;border:1px solid #e8bd6350;border-radius:18px;background:radial-gradient(ellipse at center,#bb832a25,transparent 80%);color:#f5d793}.reward-trophy>span{display:block;font-size:58px;filter:drop-shadow(0 7px 15px #eeb95430)}.reward-trophy h3{font-size:21px;margin:10px 0}.reward-trophy p{font-size:12px;line-height:1.7}
+
+/* The existing Play button also makes the whole card a keyboard-accessible target. */
+.quest-tile{position:relative}.quest-play::after{content:"";position:absolute;inset:0;border-radius:inherit;cursor:pointer}.quest-tile:has(.quest-play:focus-visible){outline:3px solid var(--quest-accent);outline-offset:4px}.quest-tile:has(.quest-play:hover){border-color:var(--quest-accent)}

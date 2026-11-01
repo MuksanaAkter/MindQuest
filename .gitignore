@@ -10,3 +10,4 @@ apps/server/src/generated/prisma/
 *.tsbuildinfo
 .vercel/
 .local/
+.neon

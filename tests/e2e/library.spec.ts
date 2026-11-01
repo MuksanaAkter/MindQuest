@@ -100,10 +100,45 @@ test("kids library supports topic filters, search, quest selection, locked frien
   await page.getByRole("button", { name: "Math", exact: true }).click();
   await expect(page.getByRole("button", { name: "Play Adding Numbers", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Play Adding Numbers", exact: true }).click();
-  await expect(page.getByLabel("Quiz code", { exact: true })).toHaveValue("MQLIBAAA");
+  const popup = page.getByRole("dialog", { name: "Ready, little explorer?" });
+  await expect(popup).toBeVisible();
+  await expect(popup.getByText("Adding Numbers", { exact: true })).toBeVisible();
+  await expect(popup.getByLabel("Your player name", { exact: true })).toBeFocused();
+  await expect(popup.getByLabel("Quiz code", { exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(popup).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Play Adding Numbers", exact: true })).toBeFocused();
   await expect(page.getByRole("button", { name: "Locked phoenix avatar", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "All quests", exact: true }).click();
   await page.getByRole("textbox", { name: "Search quizzes" }).fill("Solar System");
   await expect(page.getByRole("button", { name: "Play Planets in Our Solar System", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
+test("quiz card popup starts the selected quest directly with a name and buddy", async ({ page }) => {
+  test.skip(process.env.RUN_DB_E2E !== "1", "Needs a disposable seeded PostgreSQL database.");
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  let ownerKey: string | undefined;
+  try {
+    await page.goto("/");
+    await page.locator(".quest-tile").filter({ has: page.getByRole("heading", { name: "Adding Numbers", exact: true }) }).click();
+    const popup = page.getByRole("dialog", { name: "Ready, little explorer?" });
+    await expect(popup).toBeVisible();
+    await popup.getByLabel("Your player name", { exact: true }).fill("Popup Explorer");
+    await popup.getByRole("button", { name: "fox avatar", exact: true }).click();
+    await popup.getByRole("button", { name: "Let’s play!", exact: true }).click();
+    await expect(page).toHaveURL(/\/play\/[^/]+$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Adding Numbers");
+    await expect(page.locator(".participant-banner")).toContainText("Popup Explorer");
+    await expect(page.locator(".participant-banner>span")).toHaveText("🦊");
+    await expect(page.getByRole("timer")).toBeVisible();
+  } finally {
+    const guest = (await page.context().cookies()).find((cookie) => cookie.name === "mq_guest");
+    if (guest) ownerKey = `guest:${guest.value}`;
+    if (ownerKey) {
+      await pool.query('DELETE FROM "GameAttempt" WHERE "ownerKey"=$1', [ownerKey]);
+      await pool.query('DELETE FROM "PlayerProfile" WHERE "ownerKey"=$1', [ownerKey]);
+    }
+    await pool.end();
+  }
 });
